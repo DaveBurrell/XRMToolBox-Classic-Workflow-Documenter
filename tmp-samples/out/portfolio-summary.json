@@ -1,0 +1,777 @@
+{
+  "StartedAtUtc": "2026-03-16T11:59:06.0547979+00:00",
+  "CompletedAtUtc": "2026-03-16T11:59:06.2265706+00:00",
+  "Results": [
+    {
+      "InputPath": "C:\\Users\\davej\\OneDrive\\Desktop\\BD-Workflow-Documenter\\tmp-samples\\sample1.zip",
+      "Status": 0,
+      "WorkflowDocuments": [
+        {
+          "WorkflowName": "Workflow 1",
+          "Purpose": "Workflow 1 runs as a asynchronous workflow on account records to execute configured business actions.",
+          "Trigger": {
+            "PrimaryEntity": "account",
+            "OnCreate": false,
+            "OnUpdate": true,
+            "OnDelete": false,
+            "AttributeFilters": [],
+            "TriggerDescription": "Runs on update."
+          },
+          "ExecutionMode": 1,
+          "Sections": [
+            {
+              "Title": "Purpose",
+              "Narrative": "Workflow 1 runs as a asynchronous workflow on account records to execute configured business actions.",
+              "SourceTraces": [
+                {
+                  "SourceField": "Name",
+                  "SourcePath": "Workflow/@Name",
+                  "Notes": "Workflow display name from customizations metadata."
+                },
+                {
+                  "SourceField": "PrimaryEntity",
+                  "SourcePath": "Workflow/@PrimaryEntity",
+                  "Notes": null
+                },
+                {
+                  "SourceField": "ExecutionMode",
+                  "SourcePath": "Workflow/@Mode",
+                  "Notes": null
+                }
+              ]
+            },
+            {
+              "Title": "Trigger Behavior",
+              "Narrative": "Trigger entity: account. Runs on update. No attribute-change filter metadata was found.",
+              "SourceTraces": [
+                {
+                  "SourceField": "PrimaryEntity",
+                  "SourcePath": "Workflow/@PrimaryEntity",
+                  "Notes": null
+                },
+                {
+                  "SourceField": "TriggerFlags",
+                  "SourcePath": "Workflow/@OnCreate|@OnUpdate|@OnDelete",
+                  "Notes": null
+                },
+                {
+                  "SourceField": "AttributeFilter",
+                  "SourcePath": "Workflow/@AttributeFilter",
+                  "Notes": "Also inspects descendant FilteredAttribute/Attribute nodes."
+                }
+              ]
+            },
+            {
+              "Title": "Process Logic",
+              "Narrative": "Graph contains 3 nodes and 2 edges. No explicit condition tree was extracted.",
+              "SourceTraces": [
+                {
+                  "SourceField": "StageGraph",
+                  "SourcePath": "Workflow/Steps/*",
+                  "Notes": "Branch containers are mapped into labeled edges and synthetic merge nodes."
+                },
+                {
+                  "SourceField": "ConditionTree",
+                  "SourcePath": "Workflow//Condition|Filter|Criteria",
+                  "Notes": null
+                }
+              ]
+            },
+            {
+              "Title": "Dependencies",
+              "Narrative": "No downstream dependencies were identified in parsed metadata.",
+              "SourceTraces": [
+                {
+                  "SourceField": "Dependencies",
+                  "SourcePath": "Workflow//ChildWorkflow|ExternalCall|Action[@Reference*]",
+                  "Notes": null
+                }
+              ]
+            }
+          ],
+          "Diagrams": [
+            {
+              "Type": 0,
+              "Nodes": [
+                {
+                  "Id": "trigger",
+                  "Label": "Trigger",
+                  "Lane": "Flow",
+                  "Width": 220,
+                  "Height": 70
+                },
+                {
+                  "Id": "n1",
+                  "Label": "Start",
+                  "Lane": "Flow",
+                  "Width": 220,
+                  "Height": 70
+                },
+                {
+                  "Id": "n2",
+                  "Label": "Notify",
+                  "Lane": "Flow",
+                  "Width": 220,
+                  "Height": 70
+                }
+              ],
+              "Edges": [
+                {
+                  "FromNodeId": "trigger",
+                  "ToNodeId": "n1",
+                  "Label": null
+                },
+                {
+                  "FromNodeId": "n1",
+                  "ToNodeId": "n2",
+                  "Label": null
+                }
+              ],
+              "Caption": "Flowchart of trigger-to-step progression with decision branches."
+            },
+            {
+              "Type": 1,
+              "Nodes": [
+                {
+                  "Id": "trigger",
+                  "Label": "Trigger",
+                  "Lane": "Trigger Context",
+                  "Width": 240,
+                  "Height": 80
+                },
+                {
+                  "Id": "n1",
+                  "Label": "Start",
+                  "Lane": "Actions",
+                  "Width": 240,
+                  "Height": 80
+                },
+                {
+                  "Id": "n2",
+                  "Label": "Notify",
+                  "Lane": "Actions",
+                  "Width": 240,
+                  "Height": 80
+                }
+              ],
+              "Edges": [
+                {
+                  "FromNodeId": "trigger",
+                  "ToNodeId": "n1",
+                  "Label": null
+                },
+                {
+                  "FromNodeId": "n1",
+                  "ToNodeId": "n2",
+                  "Label": null
+                }
+              ],
+              "Caption": "Swimlane view separating trigger, logic, actions, and integrations."
+            }
+          ],
+          "Warnings": []
+        }
+      ],
+      "OverviewDocument": {
+        "SolutionName": "sample1",
+        "Workflows": [
+          {
+            "WorkflowName": "Workflow 1",
+            "Purpose": "Automates account handling for Workflow 1.",
+            "TriggerSummary": "account (update)",
+            "ExecutionMode": 1,
+            "ComplexityScore": 5,
+            "Dependencies": [],
+            "KeyRisks": [
+              "No extracted condition tree; decision intent may be under-documented."
+            ],
+            "QualityScore": {
+              "OverallScore": 100,
+              "RiskBand": "Low",
+              "Breakdown": {
+                "TriggerSpecificity": 6,
+                "Complexity": 4,
+                "DependencyImpact": 0,
+                "WarningDensity": 0
+              },
+              "Summary": "Quality score 100/100 (Low risk). This background workflow has 3 steps, 0 dependencies, and 0 warnings."
+            },
+            "WarningCodes": []
+          }
+        ],
+        "GlobalWarnings": [],
+        "DependencyGraph": {
+          "Nodes": [
+            {
+              "NodeId": "wf:2b8e4d3c57bb4119b95cb7ae2c2d474c",
+              "DisplayName": "Workflow 1",
+              "NodeType": "Workflow",
+              "IncomingEdges": 0,
+              "OutgoingEdges": 0
+            }
+          ],
+          "Edges": [],
+          "Summary": "1 node(s), 0 edge(s), 0 cross-workflow link(s)."
+        }
+      },
+      "Warnings": [],
+      "Duration": "00:00:00.0967704"
+    },
+    {
+      "InputPath": "C:\\Users\\davej\\OneDrive\\Desktop\\BD-Workflow-Documenter\\tmp-samples\\sample2.zip",
+      "Status": 0,
+      "WorkflowDocuments": [
+        {
+          "WorkflowName": "Workflow 2",
+          "Purpose": "Workflow 2 runs as a asynchronous workflow on account records to execute configured business actions.",
+          "Trigger": {
+            "PrimaryEntity": "account",
+            "OnCreate": false,
+            "OnUpdate": true,
+            "OnDelete": false,
+            "AttributeFilters": [],
+            "TriggerDescription": "Runs on update."
+          },
+          "ExecutionMode": 1,
+          "Sections": [
+            {
+              "Title": "Purpose",
+              "Narrative": "Workflow 2 runs as a asynchronous workflow on account records to execute configured business actions.",
+              "SourceTraces": [
+                {
+                  "SourceField": "Name",
+                  "SourcePath": "Workflow/@Name",
+                  "Notes": "Workflow display name from customizations metadata."
+                },
+                {
+                  "SourceField": "PrimaryEntity",
+                  "SourcePath": "Workflow/@PrimaryEntity",
+                  "Notes": null
+                },
+                {
+                  "SourceField": "ExecutionMode",
+                  "SourcePath": "Workflow/@Mode",
+                  "Notes": null
+                }
+              ]
+            },
+            {
+              "Title": "Trigger Behavior",
+              "Narrative": "Trigger entity: account. Runs on update. No attribute-change filter metadata was found.",
+              "SourceTraces": [
+                {
+                  "SourceField": "PrimaryEntity",
+                  "SourcePath": "Workflow/@PrimaryEntity",
+                  "Notes": null
+                },
+                {
+                  "SourceField": "TriggerFlags",
+                  "SourcePath": "Workflow/@OnCreate|@OnUpdate|@OnDelete",
+                  "Notes": null
+                },
+                {
+                  "SourceField": "AttributeFilter",
+                  "SourcePath": "Workflow/@AttributeFilter",
+                  "Notes": "Also inspects descendant FilteredAttribute/Attribute nodes."
+                }
+              ]
+            },
+            {
+              "Title": "Process Logic",
+              "Narrative": "Graph contains 3 nodes and 2 edges. No explicit condition tree was extracted.",
+              "SourceTraces": [
+                {
+                  "SourceField": "StageGraph",
+                  "SourcePath": "Workflow/Steps/*",
+                  "Notes": "Branch containers are mapped into labeled edges and synthetic merge nodes."
+                },
+                {
+                  "SourceField": "ConditionTree",
+                  "SourcePath": "Workflow//Condition|Filter|Criteria",
+                  "Notes": null
+                }
+              ]
+            },
+            {
+              "Title": "Dependencies",
+              "Narrative": "No downstream dependencies were identified in parsed metadata.",
+              "SourceTraces": [
+                {
+                  "SourceField": "Dependencies",
+                  "SourcePath": "Workflow//ChildWorkflow|ExternalCall|Action[@Reference*]",
+                  "Notes": null
+                }
+              ]
+            }
+          ],
+          "Diagrams": [
+            {
+              "Type": 0,
+              "Nodes": [
+                {
+                  "Id": "trigger",
+                  "Label": "Trigger",
+                  "Lane": "Flow",
+                  "Width": 220,
+                  "Height": 70
+                },
+                {
+                  "Id": "n1",
+                  "Label": "Start",
+                  "Lane": "Flow",
+                  "Width": 220,
+                  "Height": 70
+                },
+                {
+                  "Id": "n2",
+                  "Label": "Notify",
+                  "Lane": "Flow",
+                  "Width": 220,
+                  "Height": 70
+                }
+              ],
+              "Edges": [
+                {
+                  "FromNodeId": "trigger",
+                  "ToNodeId": "n1",
+                  "Label": null
+                },
+                {
+                  "FromNodeId": "n1",
+                  "ToNodeId": "n2",
+                  "Label": null
+                }
+              ],
+              "Caption": "Flowchart of trigger-to-step progression with decision branches."
+            },
+            {
+              "Type": 1,
+              "Nodes": [
+                {
+                  "Id": "trigger",
+                  "Label": "Trigger",
+                  "Lane": "Trigger Context",
+                  "Width": 240,
+                  "Height": 80
+                },
+                {
+                  "Id": "n1",
+                  "Label": "Start",
+                  "Lane": "Actions",
+                  "Width": 240,
+                  "Height": 80
+                },
+                {
+                  "Id": "n2",
+                  "Label": "Notify",
+                  "Lane": "Actions",
+                  "Width": 240,
+                  "Height": 80
+                }
+              ],
+              "Edges": [
+                {
+                  "FromNodeId": "trigger",
+                  "ToNodeId": "n1",
+                  "Label": null
+                },
+                {
+                  "FromNodeId": "n1",
+                  "ToNodeId": "n2",
+                  "Label": null
+                }
+              ],
+              "Caption": "Swimlane view separating trigger, logic, actions, and integrations."
+            }
+          ],
+          "Warnings": []
+        }
+      ],
+      "OverviewDocument": {
+        "SolutionName": "sample2",
+        "Workflows": [
+          {
+            "WorkflowName": "Workflow 2",
+            "Purpose": "Automates account handling for Workflow 2.",
+            "TriggerSummary": "account (update)",
+            "ExecutionMode": 1,
+            "ComplexityScore": 5,
+            "Dependencies": [],
+            "KeyRisks": [
+              "No extracted condition tree; decision intent may be under-documented."
+            ],
+            "QualityScore": {
+              "OverallScore": 100,
+              "RiskBand": "Low",
+              "Breakdown": {
+                "TriggerSpecificity": 6,
+                "Complexity": 4,
+                "DependencyImpact": 0,
+                "WarningDensity": 0
+              },
+              "Summary": "Quality score 100/100 (Low risk). This background workflow has 3 steps, 0 dependencies, and 0 warnings."
+            },
+            "WarningCodes": []
+          }
+        ],
+        "GlobalWarnings": [],
+        "DependencyGraph": {
+          "Nodes": [
+            {
+              "NodeId": "wf:6678b03484cc46f8b8db7ccedad7f95c",
+              "DisplayName": "Workflow 2",
+              "NodeType": "Workflow",
+              "IncomingEdges": 0,
+              "OutgoingEdges": 0
+            }
+          ],
+          "Edges": [],
+          "Summary": "1 node(s), 0 edge(s), 0 cross-workflow link(s)."
+        }
+      },
+      "Warnings": [],
+      "Duration": "00:00:00.0365810"
+    },
+    {
+      "InputPath": "C:\\Users\\davej\\OneDrive\\Desktop\\BD-Workflow-Documenter\\tmp-samples\\sample3.zip",
+      "Status": 0,
+      "WorkflowDocuments": [
+        {
+          "WorkflowName": "Workflow 3",
+          "Purpose": "Workflow 3 runs as a asynchronous workflow on account records to execute configured business actions.",
+          "Trigger": {
+            "PrimaryEntity": "account",
+            "OnCreate": false,
+            "OnUpdate": true,
+            "OnDelete": false,
+            "AttributeFilters": [],
+            "TriggerDescription": "Runs on update."
+          },
+          "ExecutionMode": 1,
+          "Sections": [
+            {
+              "Title": "Purpose",
+              "Narrative": "Workflow 3 runs as a asynchronous workflow on account records to execute configured business actions.",
+              "SourceTraces": [
+                {
+                  "SourceField": "Name",
+                  "SourcePath": "Workflow/@Name",
+                  "Notes": "Workflow display name from customizations metadata."
+                },
+                {
+                  "SourceField": "PrimaryEntity",
+                  "SourcePath": "Workflow/@PrimaryEntity",
+                  "Notes": null
+                },
+                {
+                  "SourceField": "ExecutionMode",
+                  "SourcePath": "Workflow/@Mode",
+                  "Notes": null
+                }
+              ]
+            },
+            {
+              "Title": "Trigger Behavior",
+              "Narrative": "Trigger entity: account. Runs on update. No attribute-change filter metadata was found.",
+              "SourceTraces": [
+                {
+                  "SourceField": "PrimaryEntity",
+                  "SourcePath": "Workflow/@PrimaryEntity",
+                  "Notes": null
+                },
+                {
+                  "SourceField": "TriggerFlags",
+                  "SourcePath": "Workflow/@OnCreate|@OnUpdate|@OnDelete",
+                  "Notes": null
+                },
+                {
+                  "SourceField": "AttributeFilter",
+                  "SourcePath": "Workflow/@AttributeFilter",
+                  "Notes": "Also inspects descendant FilteredAttribute/Attribute nodes."
+                }
+              ]
+            },
+            {
+              "Title": "Process Logic",
+              "Narrative": "Graph contains 3 nodes and 2 edges. No explicit condition tree was extracted.",
+              "SourceTraces": [
+                {
+                  "SourceField": "StageGraph",
+                  "SourcePath": "Workflow/Steps/*",
+                  "Notes": "Branch containers are mapped into labeled edges and synthetic merge nodes."
+                },
+                {
+                  "SourceField": "ConditionTree",
+                  "SourcePath": "Workflow//Condition|Filter|Criteria",
+                  "Notes": null
+                }
+              ]
+            },
+            {
+              "Title": "Dependencies",
+              "Narrative": "No downstream dependencies were identified in parsed metadata.",
+              "SourceTraces": [
+                {
+                  "SourceField": "Dependencies",
+                  "SourcePath": "Workflow//ChildWorkflow|ExternalCall|Action[@Reference*]",
+                  "Notes": null
+                }
+              ]
+            }
+          ],
+          "Diagrams": [
+            {
+              "Type": 0,
+              "Nodes": [
+                {
+                  "Id": "trigger",
+                  "Label": "Trigger",
+                  "Lane": "Flow",
+                  "Width": 220,
+                  "Height": 70
+                },
+                {
+                  "Id": "n1",
+                  "Label": "Start",
+                  "Lane": "Flow",
+                  "Width": 220,
+                  "Height": 70
+                },
+                {
+                  "Id": "n2",
+                  "Label": "Notify",
+                  "Lane": "Flow",
+                  "Width": 220,
+                  "Height": 70
+                }
+              ],
+              "Edges": [
+                {
+                  "FromNodeId": "trigger",
+                  "ToNodeId": "n1",
+                  "Label": null
+                },
+                {
+                  "FromNodeId": "n1",
+                  "ToNodeId": "n2",
+                  "Label": null
+                }
+              ],
+              "Caption": "Flowchart of trigger-to-step progression with decision branches."
+            },
+            {
+              "Type": 1,
+              "Nodes": [
+                {
+                  "Id": "trigger",
+                  "Label": "Trigger",
+                  "Lane": "Trigger Context",
+                  "Width": 240,
+                  "Height": 80
+                },
+                {
+                  "Id": "n1",
+                  "Label": "Start",
+                  "Lane": "Actions",
+                  "Width": 240,
+                  "Height": 80
+                },
+                {
+                  "Id": "n2",
+                  "Label": "Notify",
+                  "Lane": "Actions",
+                  "Width": 240,
+                  "Height": 80
+                }
+              ],
+              "Edges": [
+                {
+                  "FromNodeId": "trigger",
+                  "ToNodeId": "n1",
+                  "Label": null
+                },
+                {
+                  "FromNodeId": "n1",
+                  "ToNodeId": "n2",
+                  "Label": null
+                }
+              ],
+              "Caption": "Swimlane view separating trigger, logic, actions, and integrations."
+            }
+          ],
+          "Warnings": []
+        }
+      ],
+      "OverviewDocument": {
+        "SolutionName": "sample3",
+        "Workflows": [
+          {
+            "WorkflowName": "Workflow 3",
+            "Purpose": "Automates account handling for Workflow 3.",
+            "TriggerSummary": "account (update)",
+            "ExecutionMode": 1,
+            "ComplexityScore": 5,
+            "Dependencies": [],
+            "KeyRisks": [
+              "No extracted condition tree; decision intent may be under-documented."
+            ],
+            "QualityScore": {
+              "OverallScore": 100,
+              "RiskBand": "Low",
+              "Breakdown": {
+                "TriggerSpecificity": 6,
+                "Complexity": 4,
+                "DependencyImpact": 0,
+                "WarningDensity": 0
+              },
+              "Summary": "Quality score 100/100 (Low risk). This background workflow has 3 steps, 0 dependencies, and 0 warnings."
+            },
+            "WarningCodes": []
+          }
+        ],
+        "GlobalWarnings": [],
+        "DependencyGraph": {
+          "Nodes": [
+            {
+              "NodeId": "wf:9ce385eba73245ceae134f38249fdf2c",
+              "DisplayName": "Workflow 3",
+              "NodeType": "Workflow",
+              "IncomingEdges": 0,
+              "OutgoingEdges": 0
+            }
+          ],
+          "Edges": [],
+          "Summary": "1 node(s), 0 edge(s), 0 cross-workflow link(s)."
+        }
+      },
+      "Warnings": [],
+      "Duration": "00:00:00.0380545"
+    }
+  ],
+  "PortfolioSummary": {
+    "GeneratedAtUtc": "2026-03-16T11:59:06.2265706+00:00",
+    "Solutions": [
+      {
+        "SolutionName": "sample1",
+        "WorkflowCount": 1,
+        "AverageQualityScore": 100,
+        "HighRiskWorkflowCount": 0,
+        "Warnings": []
+      },
+      {
+        "SolutionName": "sample2",
+        "WorkflowCount": 1,
+        "AverageQualityScore": 100,
+        "HighRiskWorkflowCount": 0,
+        "Warnings": []
+      },
+      {
+        "SolutionName": "sample3",
+        "WorkflowCount": 1,
+        "AverageQualityScore": 100,
+        "HighRiskWorkflowCount": 0,
+        "Warnings": []
+      }
+    ],
+    "TopRiskWorkflows": [
+      {
+        "WorkflowName": "sample1 :: Workflow 1",
+        "Purpose": "Automates account handling for Workflow 1.",
+        "TriggerSummary": "account (update)",
+        "ExecutionMode": 1,
+        "ComplexityScore": 5,
+        "Dependencies": [],
+        "KeyRisks": [
+          "No extracted condition tree; decision intent may be under-documented."
+        ],
+        "QualityScore": {
+          "OverallScore": 100,
+          "RiskBand": "Low",
+          "Breakdown": {
+            "TriggerSpecificity": 6,
+            "Complexity": 4,
+            "DependencyImpact": 0,
+            "WarningDensity": 0
+          },
+          "Summary": "Quality score 100/100 (Low risk). This background workflow has 3 steps, 0 dependencies, and 0 warnings."
+        },
+        "WarningCodes": []
+      },
+      {
+        "WorkflowName": "sample2 :: Workflow 2",
+        "Purpose": "Automates account handling for Workflow 2.",
+        "TriggerSummary": "account (update)",
+        "ExecutionMode": 1,
+        "ComplexityScore": 5,
+        "Dependencies": [],
+        "KeyRisks": [
+          "No extracted condition tree; decision intent may be under-documented."
+        ],
+        "QualityScore": {
+          "OverallScore": 100,
+          "RiskBand": "Low",
+          "Breakdown": {
+            "TriggerSpecificity": 6,
+            "Complexity": 4,
+            "DependencyImpact": 0,
+            "WarningDensity": 0
+          },
+          "Summary": "Quality score 100/100 (Low risk). This background workflow has 3 steps, 0 dependencies, and 0 warnings."
+        },
+        "WarningCodes": []
+      },
+      {
+        "WorkflowName": "sample3 :: Workflow 3",
+        "Purpose": "Automates account handling for Workflow 3.",
+        "TriggerSummary": "account (update)",
+        "ExecutionMode": 1,
+        "ComplexityScore": 5,
+        "Dependencies": [],
+        "KeyRisks": [
+          "No extracted condition tree; decision intent may be under-documented."
+        ],
+        "QualityScore": {
+          "OverallScore": 100,
+          "RiskBand": "Low",
+          "Breakdown": {
+            "TriggerSpecificity": 6,
+            "Complexity": 4,
+            "DependencyImpact": 0,
+            "WarningDensity": 0
+          },
+          "Summary": "Quality score 100/100 (Low risk). This background workflow has 3 steps, 0 dependencies, and 0 warnings."
+        },
+        "WarningCodes": []
+      }
+    ],
+    "CrossSolutionDependencyGraph": {
+      "Nodes": [
+        {
+          "NodeId": "sample1:wf:2b8e4d3c57bb4119b95cb7ae2c2d474c",
+          "DisplayName": "sample1 :: Workflow 1",
+          "NodeType": "Workflow",
+          "IncomingEdges": 0,
+          "OutgoingEdges": 0
+        },
+        {
+          "NodeId": "sample2:wf:6678b03484cc46f8b8db7ccedad7f95c",
+          "DisplayName": "sample2 :: Workflow 2",
+          "NodeType": "Workflow",
+          "IncomingEdges": 0,
+          "OutgoingEdges": 0
+        },
+        {
+          "NodeId": "sample3:wf:9ce385eba73245ceae134f38249fdf2c",
+          "DisplayName": "sample3 :: Workflow 3",
+          "NodeType": "Workflow",
+          "IncomingEdges": 0,
+          "OutgoingEdges": 0
+        }
+      ],
+      "Edges": [],
+      "Summary": "Portfolio graph includes 3 node(s) and 0 edge(s) across 3 solution(s)."
+    },
+    "GlobalWarnings": []
+  },
+  "Warnings": []
+}

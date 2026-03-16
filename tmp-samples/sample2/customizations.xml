@@ -1,0 +1,1 @@
+<ImportExportXml><Workflows><Workflow Id="6678b034-84cc-46f8-b8db-7ccedad7f95c" Name="Workflow 2" PrimaryEntity="account" Mode="0"><Process><Step Name="Start"/><Action Name="Notify" ActionType="SendEmail"/></Process></Workflow></Workflows></ImportExportXml>

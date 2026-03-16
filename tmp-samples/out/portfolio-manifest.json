@@ -1,0 +1,168 @@
+{
+  "Mode": "batch",
+  "Status": "Success",
+  "InputSpec": "C:\\Users\\davej\\OneDrive\\Desktop\\BD-Workflow-Documenter\\tmp-samples\\*.zip",
+  "OutputFolder": "C:\\Users\\davej\\OneDrive\\Desktop\\BD-Workflow-Documenter\\tmp-samples\\out",
+  "Inputs": [
+    "C:\\Users\\davej\\OneDrive\\Desktop\\BD-Workflow-Documenter\\tmp-samples\\sample1.zip",
+    "C:\\Users\\davej\\OneDrive\\Desktop\\BD-Workflow-Documenter\\tmp-samples\\sample2.zip",
+    "C:\\Users\\davej\\OneDrive\\Desktop\\BD-Workflow-Documenter\\tmp-samples\\sample3.zip"
+  ],
+  "PortfolioOverviewFile": "C:\\Users\\davej\\OneDrive\\Desktop\\BD-Workflow-Documenter\\tmp-samples\\out\\overview.docx",
+  "Solutions": [
+    {
+      "InputPath": "C:\\Users\\davej\\OneDrive\\Desktop\\BD-Workflow-Documenter\\tmp-samples\\sample1.zip",
+      "Status": "Success",
+      "OutputFolder": "C:\\Users\\davej\\OneDrive\\Desktop\\BD-Workflow-Documenter\\tmp-samples\\out\\001-sample1",
+      "OverviewFile": "C:\\Users\\davej\\OneDrive\\Desktop\\BD-Workflow-Documenter\\tmp-samples\\out\\001-sample1\\overview.docx",
+      "WorkflowFiles": [
+        "C:\\Users\\davej\\OneDrive\\Desktop\\BD-Workflow-Documenter\\tmp-samples\\out\\001-sample1\\workflow-001-Workflow 1.docx"
+      ]
+    },
+    {
+      "InputPath": "C:\\Users\\davej\\OneDrive\\Desktop\\BD-Workflow-Documenter\\tmp-samples\\sample2.zip",
+      "Status": "Success",
+      "OutputFolder": "C:\\Users\\davej\\OneDrive\\Desktop\\BD-Workflow-Documenter\\tmp-samples\\out\\002-sample2",
+      "OverviewFile": "C:\\Users\\davej\\OneDrive\\Desktop\\BD-Workflow-Documenter\\tmp-samples\\out\\002-sample2\\overview.docx",
+      "WorkflowFiles": [
+        "C:\\Users\\davej\\OneDrive\\Desktop\\BD-Workflow-Documenter\\tmp-samples\\out\\002-sample2\\workflow-001-Workflow 2.docx"
+      ]
+    },
+    {
+      "InputPath": "C:\\Users\\davej\\OneDrive\\Desktop\\BD-Workflow-Documenter\\tmp-samples\\sample3.zip",
+      "Status": "Success",
+      "OutputFolder": "C:\\Users\\davej\\OneDrive\\Desktop\\BD-Workflow-Documenter\\tmp-samples\\out\\003-sample3",
+      "OverviewFile": "C:\\Users\\davej\\OneDrive\\Desktop\\BD-Workflow-Documenter\\tmp-samples\\out\\003-sample3\\overview.docx",
+      "WorkflowFiles": [
+        "C:\\Users\\davej\\OneDrive\\Desktop\\BD-Workflow-Documenter\\tmp-samples\\out\\003-sample3\\workflow-001-Workflow 3.docx"
+      ]
+    }
+  ],
+  "Summary": {
+    "GeneratedAtUtc": "2026-03-16T11:59:06.2265706+00:00",
+    "Solutions": [
+      {
+        "SolutionName": "sample1",
+        "WorkflowCount": 1,
+        "AverageQualityScore": 100,
+        "HighRiskWorkflowCount": 0,
+        "Warnings": []
+      },
+      {
+        "SolutionName": "sample2",
+        "WorkflowCount": 1,
+        "AverageQualityScore": 100,
+        "HighRiskWorkflowCount": 0,
+        "Warnings": []
+      },
+      {
+        "SolutionName": "sample3",
+        "WorkflowCount": 1,
+        "AverageQualityScore": 100,
+        "HighRiskWorkflowCount": 0,
+        "Warnings": []
+      }
+    ],
+    "TopRiskWorkflows": [
+      {
+        "WorkflowName": "sample1 :: Workflow 1",
+        "Purpose": "Automates account handling for Workflow 1.",
+        "TriggerSummary": "account (update)",
+        "ExecutionMode": 1,
+        "ComplexityScore": 5,
+        "Dependencies": [],
+        "KeyRisks": [
+          "No extracted condition tree; decision intent may be under-documented."
+        ],
+        "QualityScore": {
+          "OverallScore": 100,
+          "RiskBand": "Low",
+          "Breakdown": {
+            "TriggerSpecificity": 6,
+            "Complexity": 4,
+            "DependencyImpact": 0,
+            "WarningDensity": 0
+          },
+          "Summary": "Quality score 100/100 (Low risk). This background workflow has 3 steps, 0 dependencies, and 0 warnings."
+        },
+        "WarningCodes": []
+      },
+      {
+        "WorkflowName": "sample2 :: Workflow 2",
+        "Purpose": "Automates account handling for Workflow 2.",
+        "TriggerSummary": "account (update)",
+        "ExecutionMode": 1,
+        "ComplexityScore": 5,
+        "Dependencies": [],
+        "KeyRisks": [
+          "No extracted condition tree; decision intent may be under-documented."
+        ],
+        "QualityScore": {
+          "OverallScore": 100,
+          "RiskBand": "Low",
+          "Breakdown": {
+            "TriggerSpecificity": 6,
+            "Complexity": 4,
+            "DependencyImpact": 0,
+            "WarningDensity": 0
+          },
+          "Summary": "Quality score 100/100 (Low risk). This background workflow has 3 steps, 0 dependencies, and 0 warnings."
+        },
+        "WarningCodes": []
+      },
+      {
+        "WorkflowName": "sample3 :: Workflow 3",
+        "Purpose": "Automates account handling for Workflow 3.",
+        "TriggerSummary": "account (update)",
+        "ExecutionMode": 1,
+        "ComplexityScore": 5,
+        "Dependencies": [],
+        "KeyRisks": [
+          "No extracted condition tree; decision intent may be under-documented."
+        ],
+        "QualityScore": {
+          "OverallScore": 100,
+          "RiskBand": "Low",
+          "Breakdown": {
+            "TriggerSpecificity": 6,
+            "Complexity": 4,
+            "DependencyImpact": 0,
+            "WarningDensity": 0
+          },
+          "Summary": "Quality score 100/100 (Low risk). This background workflow has 3 steps, 0 dependencies, and 0 warnings."
+        },
+        "WarningCodes": []
+      }
+    ],
+    "CrossSolutionDependencyGraph": {
+      "Nodes": [
+        {
+          "NodeId": "sample1:wf:2b8e4d3c57bb4119b95cb7ae2c2d474c",
+          "DisplayName": "sample1 :: Workflow 1",
+          "NodeType": "Workflow",
+          "IncomingEdges": 0,
+          "OutgoingEdges": 0
+        },
+        {
+          "NodeId": "sample2:wf:6678b03484cc46f8b8db7ccedad7f95c",
+          "DisplayName": "sample2 :: Workflow 2",
+          "NodeType": "Workflow",
+          "IncomingEdges": 0,
+          "OutgoingEdges": 0
+        },
+        {
+          "NodeId": "sample3:wf:9ce385eba73245ceae134f38249fdf2c",
+          "DisplayName": "sample3 :: Workflow 3",
+          "NodeType": "Workflow",
+          "IncomingEdges": 0,
+          "OutgoingEdges": 0
+        }
+      ],
+      "Edges": [],
+      "Summary": "Portfolio graph includes 3 node(s) and 0 edge(s) across 3 solution(s)."
+    },
+    "GlobalWarnings": []
+  },
+  "Warnings": [],
+  "Error": null
+}

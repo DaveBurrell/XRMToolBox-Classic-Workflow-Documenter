@@ -1,0 +1,36 @@
+{
+    "chat.tools.terminal.autoApprove": {
+        "/^dotnet build BNWorkflowDocumenter\\.sln$/": {
+            "approve": true,
+            "matchCommandLine": true
+        },
+        "/^dotnet build BNWorkflowDocumenter\\.sln; dotnet test; \\$tmp = Join-Path \\$env:TEMP \\(\"bd-sample-doc-\" \\+ \\[guid\\]::NewGuid\\(\\)\\.ToString\\('N'\\)\\); New-Item -ItemType Directory -Path \\$tmp \\| Out-Null; @'\n<ImportExportXml><SolutionManifest><Version>3\\.0\\.0\\.0</Version></SolutionManifest></ImportExportXml>\n'@ \\| Set-Content -Path \\(Join-Path \\$tmp 'solution\\.xml'\\); @'\n<ImportExportXml>\n  <Workflows>\n    <Workflow WorkflowId=\"A2345678-1234-1234-1234-1234567890ab\" Name=\"Doc Mode Smoke\" PrimaryEntity=\"account\" Mode=\"async\" OnUpdate=\"true\">\n      <Steps>\n        <Filter Operator=\"And\">\n          <Condition Operator=\"Equals\" Left=\"statuscode\" Right=\"1\" />\n        </Filter>\n        <Action Name=\"Update Account\" Type=\"UpdateRecord\" />\n      </Steps>\n    </Workflow>\n  </Workflows>\n</ImportExportXml>\n'@ \\| Set-Content -Path \\(Join-Path \\$tmp 'customizations\\.xml'\\); Compress-Archive -Path \\(Join-Path \\$tmp '\\*'\\) -DestinationPath \\(Join-Path \\$tmp 'sample\\.zip'\\); dotnet run --project \\.\\\\src\\\\Bd\\.WorkflowDoc\\.Cli -- document \\(Join-Path \\$tmp 'sample\\.zip'\\) \\(Join-Path \\$tmp 'out'\\); Get-ChildItem -Path \\(Join-Path \\$tmp 'out'\\) -File \\| Select-Object -ExpandProperty Name$/": {
+            "approve": true,
+            "matchCommandLine": true
+        },
+        "/^dotnet add \\.\\\\src\\\\Bd\\.WorkflowDoc\\.Core\\\\Bd\\.WorkflowDoc\\.Core\\.csproj package DocumentFormat\\.OpenXml --version 3\\.1\\.2$/": {
+            "approve": true,
+            "matchCommandLine": true
+        },
+        "/^dotnet add \\.\\\\src\\\\Bd\\.WorkflowDoc\\.Core\\\\Bd\\.WorkflowDoc\\.Core\\.csproj package DocumentFormat\\.OpenXml --version 3\\.2\\.0$/": {
+            "approve": true,
+            "matchCommandLine": true
+        },
+        "/^dotnet test; \\$tmp = Join-Path \\$env:TEMP \\(\"bd-sample-docx-\" \\+ \\[guid\\]::NewGuid\\(\\)\\.ToString\\('N'\\)\\); New-Item -ItemType Directory -Path \\$tmp \\| Out-Null; @'\n<ImportExportXml><SolutionManifest><Version>3\\.1\\.0\\.0</Version></SolutionManifest></ImportExportXml>\n'@ \\| Set-Content -Path \\(Join-Path \\$tmp 'solution\\.xml'\\); @'\n<ImportExportXml>\n  <Workflows>\n    <Workflow WorkflowId=\"B2345678-1234-1234-1234-1234567890ab\" Name=\"Docx Mode Smoke\" PrimaryEntity=\"account\" Mode=\"async\" OnUpdate=\"true\">\n      <Steps>\n        <Action Name=\"Update Account\" Type=\"UpdateRecord\" />\n      </Steps>\n    </Workflow>\n  </Workflows>\n</ImportExportXml>\n'@ \\| Set-Content -Path \\(Join-Path \\$tmp 'customizations\\.xml'\\); Compress-Archive -Path \\(Join-Path \\$tmp '\\*'\\) -DestinationPath \\(Join-Path \\$tmp 'sample\\.zip'\\); dotnet run --project \\.\\\\src\\\\Bd\\.WorkflowDoc\\.Cli -- docx \\(Join-Path \\$tmp 'sample\\.zip'\\) \\(Join-Path \\$tmp 'out'\\); Get-ChildItem -Path \\(Join-Path \\$tmp 'out'\\) -File \\| Select-Object -ExpandProperty Name$/": {
+            "approve": true,
+            "matchCommandLine": true
+        },
+        "/^\\$tmp = Join-Path \\$env:TEMP \\(\"bd-sample-docx-\" \\+ \\[guid\\]::NewGuid\\(\\)\\.ToString\\('N'\\)\\); New-Item -ItemType Directory -Path \\$tmp \\| Out-Null; @'\n<ImportExportXml><SolutionManifest><Version>3\\.1\\.0\\.0</Version></SolutionManifest></ImportExportXml>\n'@ \\| Set-Content -Path \\(Join-Path \\$tmp 'solution\\.xml'\\); @'\n<ImportExportXml>\n  <Workflows>\n    <Workflow WorkflowId=\"B2345678-1234-1234-1234-1234567890ab\" Name=\"Docx Mode Smoke\" PrimaryEntity=\"account\" Mode=\"async\" OnUpdate=\"true\">\n      <Steps>\n        <Action Name=\"Update Account\" Type=\"UpdateRecord\" />\n      </Steps>\n    </Workflow>\n  </Workflows>\n</ImportExportXml>\n'@ \\| Set-Content -Path \\(Join-Path \\$tmp 'customizations\\.xml'\\); Compress-Archive -Path \\(Join-Path \\$tmp '\\*'\\) -DestinationPath \\(Join-Path \\$tmp 'sample\\.zip'\\); dotnet run --project \\.\\\\src\\\\Bd\\.WorkflowDoc\\.Cli -- docx \\(Join-Path \\$tmp 'sample\\.zip'\\) \\(Join-Path \\$tmp 'out'\\); Get-ChildItem -Path \\(Join-Path \\$tmp 'out'\\) -File \\| Select-Object -ExpandProperty Name$/": {
+            "approve": true,
+            "matchCommandLine": true
+        },
+        "/^dotnet build BNWorkflowDocumenter\\.sln; dotnet test$/": {
+            "approve": true,
+            "matchCommandLine": true
+        },
+        "/^dotnet test; dotnet run --project \\.\\\\src\\\\Bd\\.WorkflowDoc\\.Cli -- docx$/": {
+            "approve": true,
+            "matchCommandLine": true
+        }
+    }
+}
