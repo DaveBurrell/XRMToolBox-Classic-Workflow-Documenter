@@ -1,0 +1,33 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2013/05/nuspec.xsd">
+  <metadata>
+    <id>BN.WorkflowDoc.XrmToolBox</id>
+    <version>1.0.0</version>
+    <title>BridgeNexa Workflow Documenter</title>
+    <authors>Dave Burrell</authors>
+    <icon>BridgeNexa-Plugin-96.png</icon>
+    <readme>README.md</readme>
+    <projectUrl>https://github.com/DaveBurrell/XRMToolBox-Classic-Workflow-Documenter</projectUrl>
+    <iconUrl>https://raw.githubusercontent.com/DaveBurrell/XRMToolBox-Classic-Workflow-Documenter/master/src/BN.WorkflowDoc.XrmToolBox/Assets/BridgeNexa-Plugin-96.png</iconUrl>
+    <description>Document classic workflows, dialogs, and actions from a live Dataverse environment through XrmToolBox.</description>
+    <tags>xrmtoolbox dataverse dynamics365 workflow documentation classic-workflow</tags>
+    <repository type="git" url="https://github.com/DaveBurrell/XRMToolBox-Classic-Workflow-Documenter" commit="e032eebccffd03ad8179a226cfd8e8632fa1fee6" />
+    <dependencies>
+      <group targetFramework=".NETFramework4.8">
+        <dependency id="MscrmTools.Xrm.Connection" version="1.2025.9.64" exclude="Build,Analyzers" />
+        <dependency id="System.Text.Json" version="8.0.6" exclude="Build,Analyzers" />
+        <dependency id="XrmToolBoxPackage" version="1.2025.10.74" exclude="Build,Analyzers" />
+      </group>
+    </dependencies>
+    <frameworkAssemblies>
+      <frameworkAssembly assemblyName="System.IO.Compression" targetFramework=".NETFramework4.8" />
+      <frameworkAssembly assemblyName="System.IO" targetFramework=".NETFramework4.8" />
+      <frameworkAssembly assemblyName="System.Net.Http" targetFramework=".NETFramework4.8" />
+      <frameworkAssembly assemblyName="System.Runtime" targetFramework=".NETFramework4.8" />
+      <frameworkAssembly assemblyName="System.Security.Cryptography.Algorithms" targetFramework=".NETFramework4.8" />
+      <frameworkAssembly assemblyName="System.Security.Cryptography.Encoding" targetFramework=".NETFramework4.8" />
+      <frameworkAssembly assemblyName="System.Security.Cryptography.Primitives" targetFramework=".NETFramework4.8" />
+      <frameworkAssembly assemblyName="System.Security.Cryptography.X509Certificates" targetFramework=".NETFramework4.8" />
+    </frameworkAssemblies>
+  </metadata>
+</package>

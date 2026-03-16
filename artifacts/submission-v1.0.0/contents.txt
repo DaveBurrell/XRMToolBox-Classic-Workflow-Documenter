@@ -1,0 +1,7 @@
+BridgeNexa Workflow Documenter submission bundle
+
+Package: BN.WorkflowDoc.XrmToolBox.1.0.0.nupkg
+Release plugin files:
+- release-plugin/BN.WorkflowDoc.XrmToolBox.dll
+- release-plugin/BN.WorkflowDoc.XrmToolBox.pdb
+- release-plugin/BN.WorkflowDoc.Cli.runtime.zip

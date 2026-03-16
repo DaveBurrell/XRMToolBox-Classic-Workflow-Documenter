@@ -14,6 +14,25 @@
     <CliOutputPath>..\BN.WorkflowDoc.Cli\bin\$(Configuration)\$(CliTargetFramework)</CliOutputPath>
     <CliBundlePath>$(IntermediateOutputPath)cli-runtime.zip</CliBundlePath>
     <CliSidecarBundleName>BN.WorkflowDoc.Cli.runtime.zip</CliSidecarBundleName>
+    <Version>1.0.2</Version>
+    <PackageVersion>1.0.2</PackageVersion>
+    <PackageId>BN.WorkflowDoc.XrmToolBox</PackageId>
+    <Title>BridgeNexa Workflow Documenter</Title>
+    <Authors>Dave Burrell</Authors>
+    <Company>BridgeNexa</Company>
+    <PackageTags>xrmtoolbox dataverse dynamics365 workflow documentation classic-workflow</PackageTags>
+    <PackageProjectUrl>https://www.xrmtoolbox.com/</PackageProjectUrl>
+    <PackageIconUrl>https://www.xrmtoolbox.com/favicon.ico</PackageIconUrl>
+    <PackageIcon>BridgeNexa-Plugin-96.png</PackageIcon>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageOutputPath>..\..\artifacts\nuget</PackageOutputPath>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <IsPackable>true</IsPackable>
+    <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
+    <PublishRepositoryUrl>false</PublishRepositoryUrl>
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+    <Description>Document classic workflows, dialogs, and actions from a live Dataverse environment through XrmToolBox.</Description>
+    <NoWarn>$(NoWarn);NU5048;NU5100;NU5128</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
@@ -27,8 +46,20 @@
     <Reference Include="System.IO.Compression" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Include="..\..\README.md" Pack="true" PackagePath="\" Visible="false" />
+    <None Include="Assets\BridgeNexa-Plugin-96.png" Pack="true" PackagePath="\" Visible="false" />
+    <None Include="$(OutputPath)$(AssemblyName).dll" Pack="true" PackagePath="Plugins" Visible="false" />
+    <None Include="$(OutputPath)$(AssemblyName).pdb" Pack="true" PackagePath="Plugins" Visible="false" Condition="Exists('$(OutputPath)$(AssemblyName).pdb')" />
+    <None Include="$(OutputPath)$(CliSidecarBundleName)" Pack="true" PackagePath="Plugins" Visible="false" Condition="Exists('$(OutputPath)$(CliSidecarBundleName)')" />
+  </ItemGroup>
+
   <Target Name="BuildCliRuntimeBundle" BeforeTargets="CreateManifestResourceNames">
-    <MSBuild Projects="$(CliProjectPath)" Targets="Build" Properties="Configuration=$(Configuration)" />
+    <MSBuild
+      Projects="$(CliProjectPath)"
+      Targets="Build"
+      Properties="Configuration=$(Configuration);TargetFramework=$(CliTargetFramework)"
+      RemoveProperties="RuntimeIdentifier;SelfContained;PublishSingleFile;PublishReadyToRun;UseAppHost;NoBuild;GeneratePackageOnBuild" />
 
     <Exec Command="powershell -NoProfile -ExecutionPolicy Bypass -Command &quot;if (Test-Path '$(CliBundlePath)') { Remove-Item -Force '$(CliBundlePath)' }; Compress-Archive -Path '$(CliOutputPath)\*' -DestinationPath '$(CliBundlePath)' -Force&quot;" />
 

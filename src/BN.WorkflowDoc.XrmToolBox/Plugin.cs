@@ -12,7 +12,7 @@ namespace BN.WorkflowDoc.XrmToolBox;
 [ExportMetadata("BackgroundColor", "#F1EEE8")]
 [ExportMetadata("PrimaryFontColor", "#1F2937")]
 [ExportMetadata("SecondaryFontColor", "#6B7280")]
-public sealed class Plugin : PluginBase
+public sealed class Plugin : PluginBase, INoConnectionRequired
 {
     public override IXrmToolBoxPluginControl GetControl()
     {
