@@ -31,4 +31,4 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 ### Notes
 - This is the first public baseline release of the project.
 
-[1.0.0]: https://github.com/<owner>/<repo>/releases/tag/v1.0.0
+[1.0.0]: https://github.com/DaveBurrell/BridgeNexa-Workflow-Documenter/releases/tag/v1.0.0
