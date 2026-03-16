@@ -16,11 +16,11 @@ if (args.Length == 0 || string.IsNullOrWhiteSpace(args[0]))
     Console.Error.WriteLine("  BN.WorkflowDoc.Cli docx <path-to-unmanaged-solution.zip> [output-folder] [--diagram-detail standard|detailed]");
     Console.Error.WriteLine("  BN.WorkflowDoc.Cli pack <path-to-unmanaged-solution.zip> [output-folder] [--diagram-detail standard|detailed]");
     Console.Error.WriteLine("  BN.WorkflowDoc.Cli batch <zip|folder|glob> [output-folder] [--diagram-detail standard|detailed]");
-    Console.Error.WriteLine("  BN.WorkflowDoc.Cli docx-live <live-request.json> [output-folder] [--diagram-detail standard|detailed]");
+    Console.Error.WriteLine("  BN.WorkflowDoc.Cli docx-live <live-request.json> [output-folder] [--diagram-detail standard|detailed] [--narrative-tone business|technical] [--output-mode per-workflow|single]");
     return 2;
 }
 
-var (command, inputSpec, outputFolder, diagramDetailLevel) = ResolveCommand(args);
+var (command, inputSpec, outputFolder, diagramDetailLevel, narrativeTone, outputMode) = ResolveCommand(args);
 
 var options = new JsonSerializerOptions
 {
@@ -59,10 +59,15 @@ if (string.Equals(command, "docx-live", StringComparison.OrdinalIgnoreCase))
         : Path.GetFullPath(outputFolder);
     Directory.CreateDirectory(resolvedOutputFolder);
 
-    var docxWriter = new OpenXmlDocxArtifactWriter(new DeterministicPngDiagramRenderer(diagramDetailLevel));
+    var docxWriter = new OpenXmlDocxArtifactWriter(new DeterministicPngDiagramRenderer(diagramDetailLevel), narrativeTone);
+    var isSingleOutput = string.Equals(outputMode, "single", StringComparison.OrdinalIgnoreCase);
+    var writeOptions = new DocxArtifactWriteOptions(
+        IncludePerWorkflowDocuments: !isSingleOutput,
+        IncludeOverviewDocument: !isSingleOutput,
+        IncludeCombinedFullDetailDocument: isSingleOutput);
     var docxResult = docResult.Value is null
         ? new ParseResult<DocxArtifactResult>(ProcessingStatus.Failed, null, docResult.Warnings, docResult.ErrorMessage ?? "Documentation model generation failed.")
-        : await docxWriter.WriteAsync(docResult.Value, resolvedOutputFolder);
+        : await docxWriter.WriteAsync(docResult.Value, resolvedOutputFolder, writeOptions);
 
     var manifestPath = Path.Combine(resolvedOutputFolder, "bundle-manifest.json");
     if (docxResult.Value is not null)
@@ -93,6 +98,7 @@ if (string.Equals(command, "docx-live", StringComparison.OrdinalIgnoreCase))
         outputFolder = resolvedOutputFolder,
         workflowDocxFiles = docxResult.Value?.WorkflowFiles ?? Array.Empty<string>(),
         overviewDocxFile = docxResult.Value?.OverviewFile,
+        combinedFullDetailDocxFile = docxResult.Value?.CombinedFullDetailFile,
         manifestFile = File.Exists(manifestPath) ? manifestPath : null,
         warnings = docxResult.Warnings.Select(ToManifestWarning),
         error = docxResult.ErrorMessage
@@ -459,7 +465,7 @@ Console.WriteLine(JsonSerializer.Serialize(payload, options));
 
 return result.Status == ProcessingStatus.Failed ? 1 : 0;
 
-static (string Command, string ZipPath, string? OutputFolder, DiagramDetailLevel DiagramDetailLevel) ResolveCommand(string[] cliArgs)
+static (string Command, string ZipPath, string? OutputFolder, DiagramDetailLevel DiagramDetailLevel, DocumentNarrativeTone NarrativeTone, string OutputMode) ResolveCommand(string[] cliArgs)
 {
     if (cliArgs.Length >= 2 && (string.Equals(cliArgs[0], "extract", StringComparison.OrdinalIgnoreCase)
         || string.Equals(cliArgs[0], "document", StringComparison.OrdinalIgnoreCase)
@@ -485,11 +491,73 @@ static (string Command, string ZipPath, string? OutputFolder, DiagramDetailLevel
             optionStart = 3;
         }
 
-        var detailLevel = ResolveDiagramDetailLevel(cliArgs.Skip(optionStart));
-        return (command, input, outputFolder, detailLevel);
+        var optionArgs = cliArgs.Skip(optionStart).ToArray();
+        var detailLevel = ResolveDiagramDetailLevel(optionArgs);
+        var narrativeTone = ResolveNarrativeTone(optionArgs);
+        var outputMode = ResolveOutputMode(optionArgs);
+        return (command, input, outputFolder, detailLevel, narrativeTone, outputMode);
     }
 
-    return ("extract", cliArgs[0], null, ResolveDiagramDetailLevel(cliArgs.Skip(1)));
+    var defaultOptionArgs = cliArgs.Skip(1).ToArray();
+    return ("extract", cliArgs[0], null, ResolveDiagramDetailLevel(defaultOptionArgs), ResolveNarrativeTone(defaultOptionArgs), ResolveOutputMode(defaultOptionArgs));
+}
+
+static DocumentNarrativeTone ResolveNarrativeTone(IEnumerable<string> args)
+{
+    var values = args.ToArray();
+    for (var i = 0; i < values.Length; i++)
+    {
+        if (!string.Equals(values[i], "--narrative-tone", StringComparison.OrdinalIgnoreCase))
+        {
+            continue;
+        }
+
+        if (i + 1 >= values.Length)
+        {
+            break;
+        }
+
+        if (string.Equals(values[i + 1], "technical", StringComparison.OrdinalIgnoreCase))
+        {
+            return DocumentNarrativeTone.Technical;
+        }
+
+        if (string.Equals(values[i + 1], "business", StringComparison.OrdinalIgnoreCase))
+        {
+            return DocumentNarrativeTone.Business;
+        }
+    }
+
+    return DocumentNarrativeTone.Business;
+}
+
+static string ResolveOutputMode(IEnumerable<string> args)
+{
+    var values = args.ToArray();
+    for (var i = 0; i < values.Length; i++)
+    {
+        if (!string.Equals(values[i], "--output-mode", StringComparison.OrdinalIgnoreCase))
+        {
+            continue;
+        }
+
+        if (i + 1 >= values.Length)
+        {
+            break;
+        }
+
+        if (string.Equals(values[i + 1], "single", StringComparison.OrdinalIgnoreCase))
+        {
+            return "single";
+        }
+
+        if (string.Equals(values[i + 1], "per-workflow", StringComparison.OrdinalIgnoreCase))
+        {
+            return "per-workflow";
+        }
+    }
+
+    return "per-workflow";
 }
 
 static DiagramDetailLevel ResolveDiagramDetailLevel(IEnumerable<string> args)

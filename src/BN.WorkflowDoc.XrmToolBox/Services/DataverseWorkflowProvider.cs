@@ -112,7 +112,7 @@ internal sealed class DataverseWorkflowProvider : IDataverseWorkflowProvider
     {
         return new QueryExpression("workflow")
         {
-            ColumnSet = new ColumnSet("workflowid", "name", "category", "primaryentity", "mode", "scope", "ownerid", "triggeroncreate", "triggerondelete", "triggeronupdate", "triggeronupdateattributelist", "statecode"),
+            ColumnSet = new ColumnSet("workflowid", "name", "category", "primaryentity", "mode", "scope", "ownerid", "ondemand", "triggeroncreate", "triggerondelete", "triggeronupdateattributelist", "statecode"),
             Criteria = new FilterExpression(LogicalOperator.And)
             {
                 Conditions =
@@ -136,7 +136,7 @@ internal sealed class DataverseWorkflowProvider : IDataverseWorkflowProvider
     {
         return new QueryExpression("workflow")
         {
-            ColumnSet = new ColumnSet("workflowid", "name", "category", "primaryentity", "mode", "scope", "ownerid", "triggeroncreate", "triggerondelete", "triggeronupdate", "triggeronupdateattributelist", "xaml", "uidata", "statecode"),
+            ColumnSet = new ColumnSet("workflowid", "name", "category", "primaryentity", "mode", "scope", "ownerid", "ondemand", "triggeroncreate", "triggerondelete", "triggeronupdateattributelist", "xaml", "uidata", "statecode"),
             Criteria = new FilterExpression(LogicalOperator.And)
             {
                 Conditions =
@@ -227,6 +227,7 @@ internal sealed class DataverseWorkflowProvider : IDataverseWorkflowProvider
             Category: MapCategory(entity.GetAttributeValue<OptionSetValue>("category")?.Value),
             Scope: MapScope(entity.GetAttributeValue<OptionSetValue>("scope")?.Value),
             Owner: entity.GetAttributeValue<EntityReference>("ownerid")?.Name,
+            IsOnDemand: entity.GetAttributeValue<bool?>("ondemand") ?? false,
             ExecutionMode: MapExecutionMode(entity.GetAttributeValue<OptionSetValue>("mode")?.Value),
             Trigger: BuildTrigger(entity, primaryEntity),
             StageGraph: graph,
@@ -238,13 +239,8 @@ internal sealed class DataverseWorkflowProvider : IDataverseWorkflowProvider
     {
         var onCreate = entity.GetAttributeValue<bool?>("triggeroncreate") ?? false;
         var onDelete = entity.GetAttributeValue<bool?>("triggerondelete") ?? false;
-        var onUpdate = entity.GetAttributeValue<bool?>("triggeronupdate") ?? false;
         var updateAttributes = SplitList(entity.GetAttributeValue<string>("triggeronupdateattributelist"));
-
-        if (updateAttributes.Count > 0)
-        {
-            onUpdate = true;
-        }
+        var onUpdate = updateAttributes.Count > 0;
 
         var parts = new List<string>();
         if (onCreate)

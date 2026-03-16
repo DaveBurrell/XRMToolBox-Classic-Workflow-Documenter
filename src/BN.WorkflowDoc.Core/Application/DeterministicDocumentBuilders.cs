@@ -40,6 +40,8 @@ public sealed class DeterministicWorkflowDocumentBuilder : IWorkflowDocumentBuil
 
         var model = new WorkflowDocumentModel(
             WorkflowName: workflow.DisplayName,
+            ProcessCategory: NormalizeCategory(workflow.Category),
+            IsOnDemand: workflow.IsOnDemand,
             Purpose: BuildPurposeSummary(workflow),
             Trigger: workflow.Trigger,
             ExecutionMode: workflow.ExecutionMode,
@@ -60,7 +62,9 @@ public sealed class DeterministicWorkflowDocumentBuilder : IWorkflowDocumentBuil
         {
             new SourceTrace("Name", "Workflow/@Name", "Workflow display name from customizations metadata."),
             new SourceTrace("PrimaryEntity", "Workflow/@PrimaryEntity", null),
-            new SourceTrace("ExecutionMode", "Workflow/@Mode", null)
+            new SourceTrace("ExecutionMode", "Workflow/@Mode", null),
+            new SourceTrace("Category", "Workflow/@Category", null),
+            new SourceTrace("OnDemand", "Workflow/@OnDemand", null)
         };
 
         return new TraceableNarrativeSection("Purpose", narrative, traces);
@@ -68,6 +72,7 @@ public sealed class DeterministicWorkflowDocumentBuilder : IWorkflowDocumentBuil
 
     private static TraceableNarrativeSection BuildTriggerSection(WorkflowDefinition workflow)
     {
+        var category = NormalizeCategory(workflow.Category);
         var trigger = workflow.Trigger;
         var events = new List<string>(3);
         if (trigger.OnCreate)
@@ -90,12 +95,26 @@ public sealed class DeterministicWorkflowDocumentBuilder : IWorkflowDocumentBuil
             ? "No attribute-change filter metadata was found."
             : $"Attribute filters: {string.Join(", ", trigger.AttributeFilters)}.";
 
-        var narrative = $"Trigger entity: {trigger.PrimaryEntity}. Runs on {eventText}. {filterText}";
+        string narrative;
+        if (string.Equals(category, "Action", StringComparison.OrdinalIgnoreCase))
+        {
+            narrative = $"Process type: Action. Actions are invoked by process calls, API operations, or explicit references rather than direct create/update/delete trigger flags. Primary entity context: {trigger.PrimaryEntity}. On-demand availability: {(workflow.IsOnDemand ? "Yes" : "No")}.";
+        }
+        else if (string.Equals(category, "Dialog", StringComparison.OrdinalIgnoreCase))
+        {
+            narrative = $"Process type: Dialog. Dialogs are user-driven interactive processes and are typically launched manually. Primary entity context: {trigger.PrimaryEntity}. On-demand availability: {(workflow.IsOnDemand ? "Yes" : "No")}.";
+        }
+        else
+        {
+            narrative = $"Trigger entity: {trigger.PrimaryEntity}. Runs on {eventText}. {filterText} On-demand availability: {(workflow.IsOnDemand ? "Yes" : "No")}.";
+        }
+
         var traces = new[]
         {
             new SourceTrace("PrimaryEntity", "Workflow/@PrimaryEntity", null),
             new SourceTrace("TriggerFlags", "Workflow/@OnCreate|@OnUpdate|@OnDelete", null),
-            new SourceTrace("AttributeFilter", "Workflow/@AttributeFilter", "Also inspects descendant FilteredAttribute/Attribute nodes.")
+            new SourceTrace("AttributeFilter", "Workflow/@AttributeFilter", "Also inspects descendant FilteredAttribute/Attribute nodes."),
+            new SourceTrace("OnDemand", "Workflow/@OnDemand", null)
         };
 
         return new TraceableNarrativeSection("Trigger Behavior", narrative, traces);
@@ -136,8 +155,50 @@ public sealed class DeterministicWorkflowDocumentBuilder : IWorkflowDocumentBuil
 
     private static string BuildPurposeSummary(WorkflowDefinition workflow)
     {
+        var category = NormalizeCategory(workflow.Category);
         var modeText = workflow.ExecutionMode == ExecutionMode.Synchronous ? "synchronous" : "asynchronous";
-        return $"{workflow.DisplayName} runs as a {modeText} workflow on {workflow.Trigger.PrimaryEntity} records to execute configured business actions.";
+        var onDemandText = workflow.IsOnDemand ? "available for on-demand execution" : "not available for on-demand execution";
+
+        if (string.Equals(category, "Action", StringComparison.OrdinalIgnoreCase))
+        {
+            return $"{workflow.DisplayName} is a Dataverse Action-style process for {workflow.Trigger.PrimaryEntity} context that runs {modeText} and is {onDemandText}.";
+        }
+
+        if (string.Equals(category, "Dialog", StringComparison.OrdinalIgnoreCase))
+        {
+            return $"{workflow.DisplayName} is a Dialog process for {workflow.Trigger.PrimaryEntity} context that runs {modeText} and is {onDemandText}.";
+        }
+
+        return $"{workflow.DisplayName} is a Workflow process that runs as {modeText} automation on {workflow.Trigger.PrimaryEntity} records and is {onDemandText}.";
+    }
+
+    private static string NormalizeCategory(string? category)
+    {
+        if (string.IsNullOrWhiteSpace(category))
+        {
+            return "Workflow";
+        }
+
+        if (string.Equals(category, "0", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(category, "workflow", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(category, "classic", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Workflow";
+        }
+
+        if (string.Equals(category, "1", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(category, "dialog", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Dialog";
+        }
+
+        if (string.Equals(category, "3", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(category, "action", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Action";
+        }
+
+        return category.Trim();
     }
 
     private static IReadOnlyList<WorkflowStepDetail> BuildStepDetails(WorkflowDefinition workflow)
@@ -412,7 +473,17 @@ public sealed class DeterministicOverviewDocumentBuilder : IOverviewDocumentBuil
             ? $"{workflow.Trigger.PrimaryEntity} (manual/unknown)"
             : $"{workflow.Trigger.PrimaryEntity} ({string.Join(", ", triggerEvents)})";
 
-        var purpose = $"Automates {workflow.Trigger.PrimaryEntity} handling for {workflow.DisplayName}.";
+        var category = NormalizeCategory(workflow.Category);
+        if (string.Equals(category, "Action", StringComparison.OrdinalIgnoreCase))
+        {
+            triggerSummary = $"{workflow.Trigger.PrimaryEntity} (invoked action; on-demand {(workflow.IsOnDemand ? "enabled" : "disabled")})";
+        }
+        else if (string.Equals(category, "Dialog", StringComparison.OrdinalIgnoreCase))
+        {
+            triggerSummary = $"{workflow.Trigger.PrimaryEntity} (interactive dialog; on-demand {(workflow.IsOnDemand ? "enabled" : "disabled")})";
+        }
+
+        var purpose = $"{category} process for {workflow.Trigger.PrimaryEntity} handling in {workflow.DisplayName}.";
         var dependencyNames = workflow.Dependencies.Select(x => $"{x.DependencyType}:{x.Name}").ToArray();
         var keyRisks = BuildKeyRisks(workflow);
         var complexityScore = CalculateComplexity(workflow);
@@ -421,6 +492,8 @@ public sealed class DeterministicOverviewDocumentBuilder : IOverviewDocumentBuil
 
         return new OverviewWorkflowCard(
             WorkflowName: workflow.DisplayName,
+            ProcessCategory: category,
+            IsOnDemand: workflow.IsOnDemand,
             Purpose: purpose,
             TriggerSummary: triggerSummary,
             ExecutionMode: workflow.ExecutionMode,
@@ -473,6 +546,35 @@ public sealed class DeterministicOverviewDocumentBuilder : IOverviewDocumentBuil
         }
 
         return 1 + node.Children.Sum(CountConditionNodes);
+    }
+
+    private static string NormalizeCategory(string? category)
+    {
+        if (string.IsNullOrWhiteSpace(category))
+        {
+            return "Workflow";
+        }
+
+        if (string.Equals(category, "0", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(category, "workflow", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(category, "classic", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Workflow";
+        }
+
+        if (string.Equals(category, "1", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(category, "dialog", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Dialog";
+        }
+
+        if (string.Equals(category, "3", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(category, "action", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Action";
+        }
+
+        return category.Trim();
     }
 }
 

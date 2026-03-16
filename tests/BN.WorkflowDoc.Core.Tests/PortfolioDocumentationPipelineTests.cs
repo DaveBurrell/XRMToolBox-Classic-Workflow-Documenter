@@ -56,6 +56,8 @@ public sealed class PortfolioDocumentationPipelineTests
     {
         var card = new OverviewWorkflowCard(
             WorkflowName: workflowName,
+            ProcessCategory: "Workflow",
+            IsOnDemand: false,
             Purpose: "Purpose",
             TriggerSummary: "account (update)",
             ExecutionMode: ExecutionMode.Asynchronous,
@@ -87,6 +89,8 @@ public sealed class PortfolioDocumentationPipelineTests
             [
                 new WorkflowDocumentModel(
                     WorkflowName: workflowName,
+                    ProcessCategory: "Workflow",
+                    IsOnDemand: false,
                     Purpose: "Purpose",
                     Trigger: new WorkflowTrigger("account", false, true, false, Array.Empty<string>(), null),
                     ExecutionMode: ExecutionMode.Asynchronous,

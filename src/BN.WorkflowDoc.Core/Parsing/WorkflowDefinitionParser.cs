@@ -48,6 +48,7 @@ public sealed class WorkflowDefinitionParser : IWorkflowDefinitionParser
                 var category = XmlNavigation.ReadAttributeOrElement(element, "Category") ?? "classic";
                 var scope = XmlNavigation.ReadAttributeOrElement(element, "Scope") ?? "organization";
                 var owner = XmlNavigation.ReadAttributeOrElement(element, "Owner");
+                var isOnDemand = ReadBool(element, false, "OnDemand", "ondemand", "AvailableToRun", "IsOnDemand");
 
                 var workflowId = Guid.TryParse(idText, out var parsedId) ? parsedId : Guid.NewGuid();
                 if (!Guid.TryParse(idText, out _))
@@ -79,6 +80,7 @@ public sealed class WorkflowDefinitionParser : IWorkflowDefinitionParser
                     Category: category,
                     Scope: scope,
                     Owner: owner,
+                    IsOnDemand: isOnDemand,
                     ExecutionMode: executionMode,
                         Trigger: trigger,
                         StageGraph: graph,

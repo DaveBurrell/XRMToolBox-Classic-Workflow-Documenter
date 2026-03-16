@@ -56,6 +56,8 @@ public sealed record WorkflowTransitionDetail(
 /// </summary>
 public sealed record WorkflowDocumentModel(
     string WorkflowName,
+    string ProcessCategory,
+    bool IsOnDemand,
     string Purpose,
     WorkflowTrigger Trigger,
     ExecutionMode ExecutionMode,
@@ -70,6 +72,8 @@ public sealed record WorkflowDocumentModel(
 /// </summary>
 public sealed record OverviewWorkflowCard(
     string WorkflowName,
+    string ProcessCategory,
+    bool IsOnDemand,
     string Purpose,
     string TriggerSummary,
     ExecutionMode ExecutionMode,

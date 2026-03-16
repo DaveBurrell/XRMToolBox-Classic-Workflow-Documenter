@@ -108,6 +108,7 @@ public sealed class DeterministicDocumentBuildersTests
             Category: "classic",
             Scope: "organization",
             Owner: null,
+            IsOnDemand: false,
             ExecutionMode: mode,
             Trigger: new WorkflowTrigger("account", false, true, false, Array.Empty<string>(), null),
             StageGraph: new WorkflowStageGraph(nodes, edges),

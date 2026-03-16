@@ -57,6 +57,7 @@ public sealed class DependencyGraphBuilderTests
             Category: "classic",
             Scope: "organization",
             Owner: null,
+            IsOnDemand: false,
             ExecutionMode: ExecutionMode.Asynchronous,
             Trigger: new WorkflowTrigger("incident", true, false, false, Array.Empty<string>(), null),
             StageGraph: new WorkflowStageGraph(

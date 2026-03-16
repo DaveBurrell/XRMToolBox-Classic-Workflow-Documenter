@@ -26,6 +26,7 @@ public sealed class WorkflowExtractionPipelineTests
                     "classic",
                     "organization",
                     null,
+                    false,
                     ExecutionMode.Asynchronous,
                     new WorkflowTrigger("account", false, true, false, Array.Empty<string>(), null),
                     WorkflowStageGraph.Empty,

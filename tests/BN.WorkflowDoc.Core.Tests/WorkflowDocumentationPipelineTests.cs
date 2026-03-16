@@ -16,6 +16,8 @@ public sealed class WorkflowDocumentationPipelineTests
         var extraction = new ParseResult<SolutionPackage>(ProcessingStatus.Success, package, Array.Empty<ProcessingWarning>());
         var workflowModel = new WorkflowDocumentModel(
             "Account Follow Up",
+            "Workflow",
+            false,
             "Purpose",
             workflow.Trigger,
             workflow.ExecutionMode,
@@ -30,7 +32,7 @@ public sealed class WorkflowDocumentationPipelineTests
             ProcessingStatus.Success,
             new OverviewDocumentModel("x", new[]
             {
-                new OverviewWorkflowCard("Account Follow Up", "Purpose", "account (update)", ExecutionMode.Asynchronous, 5, Array.Empty<string>(), Array.Empty<string>())
+                new OverviewWorkflowCard("Account Follow Up", "Workflow", false, "Purpose", "account (update)", ExecutionMode.Asynchronous, 5, Array.Empty<string>(), Array.Empty<string>())
             }, Array.Empty<ProcessingWarning>()),
             Array.Empty<ProcessingWarning>());
 
@@ -88,6 +90,7 @@ public sealed class WorkflowDocumentationPipelineTests
             Category: "classic",
             Scope: "organization",
             Owner: null,
+            IsOnDemand: false,
             ExecutionMode: ExecutionMode.Asynchronous,
             Trigger: new WorkflowTrigger("account", false, true, false, Array.Empty<string>(), null),
             StageGraph: WorkflowStageGraph.Empty,

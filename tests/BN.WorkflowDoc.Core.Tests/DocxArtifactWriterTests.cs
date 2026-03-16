@@ -16,6 +16,8 @@ public sealed class DocxArtifactWriterTests
 
         var workflowDocument = new WorkflowDocumentModel(
             WorkflowName: "Sample Workflow",
+            ProcessCategory: "Workflow",
+            IsOnDemand: false,
             Purpose: "Purpose text",
             Trigger: new WorkflowTrigger("account", false, true, false, Array.Empty<string>(), null),
             ExecutionMode: ExecutionMode.Asynchronous,
@@ -78,6 +80,8 @@ public sealed class DocxArtifactWriterTests
             {
                 new OverviewWorkflowCard(
                     "Sample Workflow",
+                    "Workflow",
+                    false,
                     "Purpose text",
                     "account (update)",
                     ExecutionMode.Asynchronous,

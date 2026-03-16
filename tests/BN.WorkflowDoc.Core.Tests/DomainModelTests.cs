@@ -21,6 +21,8 @@ public sealed class DomainModelTests
             ProcessingStatus.PartialSuccess,
             new WorkflowDocumentModel(
                 "Sample Workflow",
+                "Workflow",
+                false,
                 "Updates status fields",
                 new WorkflowTrigger("account", true, false, false, Array.Empty<string>(), null),
                 ExecutionMode.Asynchronous,

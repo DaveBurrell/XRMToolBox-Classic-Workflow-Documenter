@@ -7,6 +7,7 @@ public sealed record WorkflowDefinition(
     string Category,
     string Scope,
     string? Owner,
+    bool IsOnDemand,
     ExecutionMode ExecutionMode,
     WorkflowTrigger Trigger,
     WorkflowStageGraph StageGraph,

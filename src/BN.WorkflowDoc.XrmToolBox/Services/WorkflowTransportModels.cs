@@ -75,6 +75,7 @@ internal sealed record WorkflowDefinitionPayload(
     string Category,
     string Scope,
     string? Owner,
+    bool IsOnDemand,
     string ExecutionMode,
     WorkflowTriggerPayload Trigger,
     WorkflowStageGraphPayload StageGraph,
@@ -115,6 +116,7 @@ internal sealed record CliDocxResult(
     string OutputFolder,
     IReadOnlyList<string>? WorkflowDocxFiles,
     string? OverviewDocxFile,
+    string? CombinedFullDetailDocxFile,
     IReadOnlyList<CliWarning>? Warnings,
     string? Error,
     string? ManifestFile = null);

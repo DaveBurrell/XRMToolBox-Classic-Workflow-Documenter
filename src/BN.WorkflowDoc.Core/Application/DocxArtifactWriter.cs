@@ -16,8 +16,17 @@ namespace BN.WorkflowDoc.Core.Application;
 public sealed record DocxArtifactResult(
     string OutputFolder,
     IReadOnlyList<string> WorkflowFiles,
-    string OverviewFile,
-    IReadOnlyList<ProcessingWarning> Warnings);
+    string? OverviewFile,
+    IReadOnlyList<ProcessingWarning> Warnings,
+    string? CombinedFullDetailFile = null);
+
+/// <summary>
+/// Options that control which DOCX artifacts are written.
+/// </summary>
+public sealed record DocxArtifactWriteOptions(
+    bool IncludePerWorkflowDocuments = true,
+    bool IncludeOverviewDocument = true,
+    bool IncludeCombinedFullDetailDocument = false);
 
 /// <summary>
 /// Writes workflow and overview documentation models into DOCX artifacts.
@@ -30,6 +39,15 @@ public interface IDocxArtifactWriter
     Task<ParseResult<DocxArtifactResult>> WriteAsync(
         DocumentationGenerationResult generationResult,
         string outputFolder,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Writes generated documentation artifacts using explicit output options.
+    /// </summary>
+    Task<ParseResult<DocxArtifactResult>> WriteAsync(
+        DocumentationGenerationResult generationResult,
+        string outputFolder,
+        DocxArtifactWriteOptions options,
         CancellationToken cancellationToken = default);
 }
 
@@ -84,10 +102,20 @@ public sealed class OpenXmlDocxArtifactWriter : IDocxArtifactWriter
         string outputFolder,
         CancellationToken cancellationToken = default)
     {
+        return await WriteAsync(generationResult, outputFolder, new DocxArtifactWriteOptions(), cancellationToken).ConfigureAwait(false);
+    }
+
+    public async Task<ParseResult<DocxArtifactResult>> WriteAsync(
+        DocumentationGenerationResult generationResult,
+        string outputFolder,
+        DocxArtifactWriteOptions options,
+        CancellationToken cancellationToken = default)
+    {
         cancellationToken.ThrowIfCancellationRequested();
 
         var warnings = new List<ProcessingWarning>(generationResult.Warnings);
         var workflowFiles = new List<string>(generationResult.WorkflowDocuments.Count);
+        var renderedWorkflows = new List<(WorkflowDocumentModel Model, IReadOnlyList<RenderedDiagramAsset> Assets)>(generationResult.WorkflowDocuments.Count);
 
         try
         {
@@ -97,42 +125,61 @@ public sealed class OpenXmlDocxArtifactWriter : IDocxArtifactWriter
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 var workflowModel = generationResult.WorkflowDocuments[i];
-                var path = Path.Combine(
-                    outputFolder,
-                    ArtifactPathNaming.BuildWorkflowDocumentFileName(i + 1, workflowModel.WorkflowName, ".docx"));
 
                 var renderedDiagrams = await _diagramRenderer
                     .RenderAsync(workflowModel.Diagrams, cancellationToken)
                     .ConfigureAwait(false);
 
                 warnings.AddRange(renderedDiagrams.Warnings);
-                WriteWorkflowDoc(path, workflowModel, renderedDiagrams.Value ?? Array.Empty<RenderedDiagramAsset>(), _narrativeTone);
-                workflowFiles.Add(path);
+                var assets = renderedDiagrams.Value ?? Array.Empty<RenderedDiagramAsset>();
+                renderedWorkflows.Add((workflowModel, assets));
+
+                if (options.IncludePerWorkflowDocuments)
+                {
+                    var path = Path.Combine(
+                        outputFolder,
+                        ArtifactPathNaming.BuildWorkflowDocumentFileName(i + 1, workflowModel.WorkflowName, ".docx"));
+
+                    WriteWorkflowDoc(path, workflowModel, assets, _narrativeTone);
+                    workflowFiles.Add(path);
+                }
             }
 
-            var overviewPath = Path.Combine(outputFolder, "overview.docx");
+            string? overviewPath = null;
             RenderedDiagramAsset? dependencyGraphAsset = null;
-            if (generationResult.OverviewDocument.DependencyGraph?.Nodes.Count > 0)
+            if (options.IncludeOverviewDocument)
             {
-                var dependencyDiagram = _dependencyGraphDiagramMapper.Map(generationResult.OverviewDocument.DependencyGraph);
-                var dependencyRenderResult = await _diagramRenderer
-                    .RenderAsync([dependencyDiagram], cancellationToken)
-                    .ConfigureAwait(false);
+                overviewPath = Path.Combine(outputFolder, "overview.docx");
 
-                warnings.AddRange(dependencyRenderResult.Warnings);
-                dependencyGraphAsset = dependencyRenderResult.Value?.FirstOrDefault();
+                if (generationResult.OverviewDocument.DependencyGraph?.Nodes.Count > 0)
+                {
+                    var dependencyDiagram = _dependencyGraphDiagramMapper.Map(generationResult.OverviewDocument.DependencyGraph);
+                    var dependencyRenderResult = await _diagramRenderer
+                        .RenderAsync([dependencyDiagram], cancellationToken)
+                        .ConfigureAwait(false);
+
+                    warnings.AddRange(dependencyRenderResult.Warnings);
+                    dependencyGraphAsset = dependencyRenderResult.Value?.FirstOrDefault();
+                }
+
+                WriteOverviewDoc(
+                    overviewPath,
+                    generationResult.OverviewDocument,
+                    generationResult.WorkflowDocuments,
+                    _narrativeTone,
+                    dependencyGraphAsset);
             }
 
-            WriteOverviewDoc(
-                overviewPath,
-                generationResult.OverviewDocument,
-                generationResult.WorkflowDocuments,
-                _narrativeTone,
-                dependencyGraphAsset);
+            string? combinedFile = null;
+            if (options.IncludeCombinedFullDetailDocument)
+            {
+                combinedFile = Path.Combine(outputFolder, "combined-full-detail.docx");
+                WriteCombinedWorkflowDoc(combinedFile, generationResult.OverviewDocument.SolutionName, renderedWorkflows, _narrativeTone);
+            }
 
             WriteStepInventoryCsv(outputFolder, generationResult.WorkflowDocuments);
 
-            var value = new DocxArtifactResult(outputFolder, workflowFiles, overviewPath, warnings);
+            var value = new DocxArtifactResult(outputFolder, workflowFiles, overviewPath, warnings, combinedFile);
             var status = warnings.Count == 0 ? ProcessingStatus.Success : ProcessingStatus.PartialSuccess;
             return new ParseResult<DocxArtifactResult>(status, value, warnings);
         }
@@ -157,7 +204,9 @@ public sealed class OpenXmlDocxArtifactWriter : IDocxArtifactWriter
         string path,
         WorkflowDocumentModel model,
         IReadOnlyList<RenderedDiagramAsset> renderedDiagrams,
-        DocumentNarrativeTone narrativeTone)
+        DocumentNarrativeTone narrativeTone,
+        bool includeTableOfContents = true,
+        bool includeCoverBlock = true)
     {
         using var doc = WordprocessingDocument.Create(path, WordprocessingDocumentType.Document);
         var main = doc.AddMainDocumentPart();
@@ -166,25 +215,33 @@ public sealed class OpenXmlDocxArtifactWriter : IDocxArtifactWriter
         var body = main.Document.Body!;
         var currentLayout = DocumentPageLayout.Portrait;
 
-        // Cover / title block
-        AppendTitle(body, model.WorkflowName);
-        AppendParagraph(body, "Dynamics 365 Workflow Process Documentation", style: "Subtitle");
-        AppendParagraph(body, $"Generated: {DateTime.UtcNow:dd MMMM yyyy HH:mm} UTC", style: "Caption");
-        AppendBlankLine(body);
+        if (includeCoverBlock)
+        {
+            // Cover / title block
+            AppendTitle(body, model.WorkflowName);
+            AppendParagraph(body, "Dynamics 365 Process Documentation", style: "Subtitle");
+            AppendParagraph(body, $"Generated: {DateTime.UtcNow:dd MMMM yyyy HH:mm} UTC", style: "Caption");
+            AppendBlankLine(body);
+        }
 
-        AppendHeading(body, "Table of Contents");
-        AppendTocPlaceholder(body);
-        AppendSectionDivider(body);
+        if (includeTableOfContents)
+        {
+            AppendHeading(body, "Table of Contents");
+            AppendTocPlaceholder(body);
+            AppendSectionDivider(body);
+        }
 
-        AppendHeading(body, "Workflow Summary");
+        AppendHeading(body, "Process Summary");
         AppendParagraph(body, model.Purpose);
         AppendStyledTable(
             body,
             ["Property", "Value"],
             new[]
             {
+            new[] { "Process Category", model.ProcessCategory },
                 new[] { "Primary Entity", model.Trigger.PrimaryEntity },
                 new[] { "Execution Mode", model.ExecutionMode.ToString() },
+            new[] { "On-Demand Available", model.IsOnDemand ? "Yes" : "No" },
                 new[] { "Events", BuildEventSummary(model.Trigger) },
                 new[]
                 {
@@ -196,28 +253,33 @@ public sealed class OpenXmlDocxArtifactWriter : IDocxArtifactWriter
                 new[] { "Diagram Count", model.Diagrams.Count.ToString() }
             });
 
-        AppendHeading(body, "Workflow Overview");
+        AppendHeading(body, "Process Overview");
         AppendParagraph(body, BuildWorkflowOverviewNarrative(model, narrativeTone));
 
         AppendHeading(body, "Purpose");
         AppendParagraph(body, model.Purpose);
 
-        AppendHeading(body, "Trigger Matrix");
-        AppendStyledTable(
-            body,
-            ["Trigger", "Enabled"],
-            new[]
-            {
-                new[] { "On Create", model.Trigger.OnCreate ? "Yes" : "No" },
-                new[] { "On Update", model.Trigger.OnUpdate ? "Yes" : "No" },
-                new[] { "On Delete", model.Trigger.OnDelete ? "Yes" : "No" }
-            });
+        if (string.Equals(model.ProcessCategory, "Workflow", StringComparison.OrdinalIgnoreCase))
+        {
+            AppendHeading(body, "Trigger Matrix");
+            AppendStyledTable(
+                body,
+                ["Trigger", "Enabled"],
+                new[]
+                {
+                    new[] { "On Create", model.Trigger.OnCreate ? "Yes" : "No" },
+                    new[] { "On Update", model.Trigger.OnUpdate ? "Yes" : "No" },
+                    new[] { "On Delete", model.Trigger.OnDelete ? "Yes" : "No" }
+                });
+        }
+        else
+        {
+            AppendHeading(body, "Invocation Profile");
+            AppendParagraph(body, BuildInvocationProfileNarrative(model));
+        }
 
         AppendHeading(body, "Execution Mode");
-        AppendParagraph(body,
-            model.ExecutionMode == ExecutionMode.Synchronous
-                ? "This is a real-time workflow. Actions execute in the transaction context."
-                : "This is a background workflow. Actions execute asynchronously after the triggering event.");
+        AppendParagraph(body, BuildExecutionModeNarrative(model));
 
         var fieldReads = BuildFieldReadRows(model);
         var fieldWrites = BuildFieldWriteRows(model);
@@ -430,6 +492,85 @@ public sealed class OpenXmlDocxArtifactWriter : IDocxArtifactWriter
         }
 
         ApplyDocumentLayout(body, currentLayout);
+        main.Document.Save();
+    }
+
+    private static void WriteCombinedWorkflowDoc(
+        string path,
+        string solutionName,
+        IReadOnlyList<(WorkflowDocumentModel Model, IReadOnlyList<RenderedDiagramAsset> Assets)> renderedWorkflows,
+        DocumentNarrativeTone narrativeTone)
+    {
+        using var doc = WordprocessingDocument.Create(path, WordprocessingDocumentType.Document);
+        var main = doc.AddMainDocumentPart();
+        main.Document = new Document(new Body());
+        EnsureStyles(main);
+        var body = main.Document.Body!;
+
+        AppendTitle(body, "Dynamics 365 Combined Process Documentation");
+        AppendParagraph(body, string.IsNullOrWhiteSpace(solutionName) ? "Workflow Selection" : solutionName, style: "Subtitle");
+        AppendParagraph(body, $"Included Processes: {renderedWorkflows.Count}", style: "Caption");
+        AppendParagraph(body, $"Generated: {DateTime.UtcNow:dd MMMM yyyy HH:mm} UTC", style: "Caption");
+        AppendHeading(body, "Table of Contents");
+        AppendTocPlaceholder(body);
+        AppendSectionDivider(body);
+
+        var tempFiles = new List<string>(renderedWorkflows.Count);
+        try
+        {
+            for (var i = 0; i < renderedWorkflows.Count; i++)
+            {
+                var (workflowModel, assets) = renderedWorkflows[i];
+
+                if (i > 0)
+                {
+                    AppendPageBreak(body);
+                }
+
+                AppendHeading(body, $"Process {i + 1} of {renderedWorkflows.Count}: {workflowModel.WorkflowName}", level: 1);
+                AppendParagraph(
+                    body,
+                    $"Category: {workflowModel.ProcessCategory} | Mode: {workflowModel.ExecutionMode} | On-demand: {(workflowModel.IsOnDemand ? "Yes" : "No")}",
+                    style: "Caption");
+                AppendSectionDivider(body);
+
+                var tempPath = Path.Combine(Path.GetTempPath(), $"bn-workflowdoc-combined-{Guid.NewGuid():N}.docx");
+                WriteWorkflowDoc(
+                    tempPath,
+                    workflowModel,
+                    assets,
+                    narrativeTone,
+                    includeTableOfContents: false,
+                    includeCoverBlock: false);
+                tempFiles.Add(tempPath);
+
+                var altChunkId = $"chunk{i + 1:D4}";
+                var altPart = main.AddAlternativeFormatImportPart(AlternativeFormatImportPartType.WordprocessingML, altChunkId);
+                using (var stream = File.OpenRead(tempPath))
+                {
+                    altPart.FeedData(stream);
+                }
+
+                body.Append(new AltChunk { Id = altChunkId });
+            }
+        }
+        finally
+        {
+            foreach (var tempPath in tempFiles)
+            {
+                try
+                {
+                    if (File.Exists(tempPath))
+                    {
+                        File.Delete(tempPath);
+                    }
+                }
+                catch
+                {
+                }
+            }
+        }
+
         main.Document.Save();
     }
 
@@ -1142,6 +1283,10 @@ public sealed class OpenXmlDocxArtifactWriter : IDocxArtifactWriter
 
     private static string BuildWorkflowOverviewNarrative(WorkflowDocumentModel model, DocumentNarrativeTone narrativeTone)
     {
+        var isWorkflow = string.Equals(model.ProcessCategory, "Workflow", StringComparison.OrdinalIgnoreCase);
+        var isDialog = string.Equals(model.ProcessCategory, "Dialog", StringComparison.OrdinalIgnoreCase);
+        var isAction = string.Equals(model.ProcessCategory, "Action", StringComparison.OrdinalIgnoreCase);
+
         if (narrativeTone == DocumentNarrativeTone.Technical)
         {
             var modeText = model.ExecutionMode == ExecutionMode.Synchronous
@@ -1157,8 +1302,20 @@ public sealed class OpenXmlDocxArtifactWriter : IDocxArtifactWriter
                 ? "No diagram metadata was available."
                 : $"{model.Diagrams.Count} diagram artifact(s) are included.";
 
-            return $"Workflow executes {modeText} for entity '{model.Trigger.PrimaryEntity}' and triggers {whenText}. " +
-                   $"{filterText} {diagramText}";
+                 if (isAction)
+                 {
+                  return $"Action process executes {modeText} for entity '{model.Trigger.PrimaryEntity}'. " +
+                      $"Invocation model is action/API driven (not standard create/update/delete trigger flags). On-demand available: {(model.IsOnDemand ? "yes" : "no")}. {diagramText}";
+                 }
+
+                 if (isDialog)
+                 {
+                  return $"Dialog process executes {modeText} for entity '{model.Trigger.PrimaryEntity}'. " +
+                      $"Invocation model is user-driven interactive execution. On-demand available: {(model.IsOnDemand ? "yes" : "no")}. {diagramText}";
+                 }
+
+                 return $"Workflow executes {modeText} for entity '{model.Trigger.PrimaryEntity}' and triggers {whenText}. " +
+                     $"{filterText} On-demand available: {(model.IsOnDemand ? "yes" : "no")}. {diagramText}";
         }
 
         var modeTextBusiness = model.ExecutionMode == ExecutionMode.Synchronous
@@ -1175,12 +1332,26 @@ public sealed class OpenXmlDocxArtifactWriter : IDocxArtifactWriter
             ? string.Empty
             : " A process map is included for quick review.";
 
-        return $"This workflow automates key steps for {model.Trigger.PrimaryEntity} records. " +
-               $"It runs {modeTextBusiness} {whenTextBusiness}, helping teams apply the process consistently and reduce manual effort.{filterTextBusiness}{diagramTextBusiness}";
+         if (isAction)
+         {
+             return $"This action process supports {model.Trigger.PrimaryEntity} operations and runs {modeTextBusiness}. " +
+                 $"It is called by other processes or API operations and is {(model.IsOnDemand ? "available" : "not available")} for on-demand execution.{diagramTextBusiness}";
+         }
+
+         if (isDialog)
+         {
+             return $"This dialog process guides users through {model.Trigger.PrimaryEntity} steps and runs {modeTextBusiness}. " +
+                 $"It is {(model.IsOnDemand ? "available" : "not available")} for on-demand interactive execution.{diagramTextBusiness}";
+         }
+
+         return $"This workflow automates key steps for {model.Trigger.PrimaryEntity} records. " +
+             $"It runs {modeTextBusiness} {whenTextBusiness}, helping teams apply the process consistently and reduce manual effort. " +
+             $"On-demand execution is {(model.IsOnDemand ? "available" : "not available")}.{filterTextBusiness}{diagramTextBusiness}";
     }
 
     private static string BuildOverviewCardNarrative(OverviewWorkflowCard card, DocumentNarrativeTone narrativeTone)
     {
+        var categoryText = string.IsNullOrWhiteSpace(card.ProcessCategory) ? "Workflow" : card.ProcessCategory;
         if (narrativeTone == DocumentNarrativeTone.Technical)
         {
             var modeTextTechnical = card.ExecutionMode == ExecutionMode.Synchronous
@@ -1191,8 +1362,8 @@ public sealed class OpenXmlDocxArtifactWriter : IDocxArtifactWriter
                 ? "No explicit risk indicators were flagged by metadata heuristics."
                 : $"Risk indicators flagged: {card.KeyRisks.Count}.";
 
-            return $"Trigger profile: {card.TriggerSummary}. Mode: {modeTextTechnical}. " +
-                   $"Dependencies: {card.Dependencies.Count}. Complexity score: {card.ComplexityScore}. {riskTextTechnical}";
+                 return $"Category: {categoryText}. Trigger profile: {card.TriggerSummary}. Mode: {modeTextTechnical}. " +
+                     $"On-demand available: {(card.IsOnDemand ? "yes" : "no")}. Dependencies: {card.Dependencies.Count}. Complexity score: {card.ComplexityScore}. {riskTextTechnical}";
         }
 
         var modeTextBusiness = card.ExecutionMode == ExecutionMode.Synchronous
@@ -1207,8 +1378,44 @@ public sealed class OpenXmlDocxArtifactWriter : IDocxArtifactWriter
             ? "No major risk indicators were identified."
             : "Potential risk indicators were identified and should be reviewed.";
 
-        return $"This workflow starts when {card.TriggerSummary} and runs {modeTextBusiness}. " +
-             $"It is designed to standardize processing and improve consistency. {dependencyText} {riskText}";
+        return $"This {categoryText.ToLowerInvariant()} starts when {card.TriggerSummary} and runs {modeTextBusiness}. " +
+             $"On-demand execution is {(card.IsOnDemand ? "available" : "not available")}. {dependencyText} {riskText}";
+    }
+
+    private static string BuildInvocationProfileNarrative(WorkflowDocumentModel model)
+    {
+        if (string.Equals(model.ProcessCategory, "Action", StringComparison.OrdinalIgnoreCase))
+        {
+            return $"Action invocation is process/API driven. Direct event triggers (create/update/delete) are not primary metadata for actions. Context entity: {model.Trigger.PrimaryEntity}. On-demand available: {(model.IsOnDemand ? "Yes" : "No")}.";
+        }
+
+        if (string.Equals(model.ProcessCategory, "Dialog", StringComparison.OrdinalIgnoreCase))
+        {
+            return $"Dialog invocation is user-driven interactive execution. Context entity: {model.Trigger.PrimaryEntity}. On-demand available: {(model.IsOnDemand ? "Yes" : "No")}.";
+        }
+
+        return $"Workflow invocation follows event triggers for {model.Trigger.PrimaryEntity} records. On-demand available: {(model.IsOnDemand ? "Yes" : "No")}.";
+    }
+
+    private static string BuildExecutionModeNarrative(WorkflowDocumentModel model)
+    {
+        var modeText = model.ExecutionMode == ExecutionMode.Synchronous
+            ? "synchronous (real-time)"
+            : "asynchronous (background)";
+
+        if (string.Equals(model.ProcessCategory, "Action", StringComparison.OrdinalIgnoreCase))
+        {
+            return $"This action runs in {modeText} mode. Invocation typically occurs from process calls or API execution contexts.";
+        }
+
+        if (string.Equals(model.ProcessCategory, "Dialog", StringComparison.OrdinalIgnoreCase))
+        {
+            return $"This dialog runs in {modeText} mode within a user-guided interaction path.";
+        }
+
+        return model.ExecutionMode == ExecutionMode.Synchronous
+            ? "This is a real-time workflow. Actions execute in the transaction context."
+            : "This is a background workflow. Actions execute asynchronously after the triggering event.";
     }
 
     private static string BuildBusinessTriggerSummary(WorkflowTrigger trigger)

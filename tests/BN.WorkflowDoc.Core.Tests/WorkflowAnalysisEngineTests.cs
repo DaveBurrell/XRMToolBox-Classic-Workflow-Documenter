@@ -78,6 +78,7 @@ public sealed class WorkflowAnalysisEngineTests
             Category: "classic",
             Scope: "organization",
             Owner: null,
+            IsOnDemand: false,
             ExecutionMode: mode,
             Trigger: new WorkflowTrigger("account", true, true, false, ["name"], "create and update"),
             StageGraph: new WorkflowStageGraph(nodes, edges),

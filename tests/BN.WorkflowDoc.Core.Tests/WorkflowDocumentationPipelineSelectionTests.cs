@@ -17,6 +17,7 @@ public sealed class WorkflowDocumentationPipelineSelectionTests
             Category: "Workflow",
             Scope: "Organization",
             Owner: "System",
+            IsOnDemand: true,
             ExecutionMode: ExecutionMode.Asynchronous,
             Trigger: new WorkflowTrigger("account", true, true, false, ["statuscode"], "Create or update"),
             StageGraph: new WorkflowStageGraph(

@@ -15,6 +15,7 @@ internal sealed record WorkflowDefinitionPayload(
     string Category,
     string Scope,
     string? Owner,
+    bool IsOnDemand,
     string ExecutionMode,
     WorkflowTriggerPayload Trigger,
     WorkflowStageGraphPayload StageGraph,
@@ -76,6 +77,7 @@ internal static class LiveWorkflowTransportMapper
             Category: payload.Category,
             Scope: payload.Scope,
             Owner: payload.Owner,
+            IsOnDemand: payload.IsOnDemand,
             ExecutionMode: ParseExecutionMode(payload.ExecutionMode),
             Trigger: new WorkflowTrigger(
                 payload.Trigger.PrimaryEntity,

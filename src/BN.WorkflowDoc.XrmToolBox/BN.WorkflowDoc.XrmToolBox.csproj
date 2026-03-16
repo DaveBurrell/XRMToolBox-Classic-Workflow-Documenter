@@ -9,6 +9,11 @@
     <AssemblyName>BN.WorkflowDoc.XrmToolBox</AssemblyName>
     <RootNamespace>BN.WorkflowDoc.XrmToolBox</RootNamespace>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <CliProjectPath>..\BN.WorkflowDoc.Cli\BN.WorkflowDoc.Cli.csproj</CliProjectPath>
+    <CliTargetFramework>net10.0</CliTargetFramework>
+    <CliOutputPath>..\BN.WorkflowDoc.Cli\bin\$(Configuration)\$(CliTargetFramework)</CliOutputPath>
+    <CliBundlePath>$(IntermediateOutputPath)cli-runtime.zip</CliBundlePath>
+    <CliSidecarBundleName>BN.WorkflowDoc.Cli.runtime.zip</CliSidecarBundleName>
   </PropertyGroup>
 
   <ItemGroup>
@@ -17,4 +22,26 @@
     <PackageReference Include="System.Text.Json" Version="8.0.6" />
     <PackageReference Include="XrmToolBoxPackage" Version="1.2025.10.74" />
   </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="System.IO.Compression" />
+  </ItemGroup>
+
+  <Target Name="BuildCliRuntimeBundle" BeforeTargets="CreateManifestResourceNames">
+    <MSBuild Projects="$(CliProjectPath)" Targets="Build" Properties="Configuration=$(Configuration)" />
+
+    <Exec Command="powershell -NoProfile -ExecutionPolicy Bypass -Command &quot;if (Test-Path '$(CliBundlePath)') { Remove-Item -Force '$(CliBundlePath)' }; Compress-Archive -Path '$(CliOutputPath)\*' -DestinationPath '$(CliBundlePath)' -Force&quot;" />
+
+    <ItemGroup>
+      <EmbeddedResource Include="$(CliBundlePath)" LogicalName="BN.WorkflowDoc.XrmToolBox.CliRuntime.zip" />
+    </ItemGroup>
+  </Target>
+
+  <Target Name="RemoveLegacyCliOutputFolder" AfterTargets="Build">
+    <RemoveDir Directories="$(OutDir)cli" Condition="Exists('$(OutDir)cli')" ContinueOnError="WarnAndContinue" />
+  </Target>
+
+  <Target Name="CopyCliRuntimeBundleSidecar" AfterTargets="Build" DependsOnTargets="BuildCliRuntimeBundle">
+    <Copy SourceFiles="$(CliBundlePath)" DestinationFiles="$(OutDir)$(CliSidecarBundleName)" SkipUnchangedFiles="true" />
+  </Target>
 </Project>
