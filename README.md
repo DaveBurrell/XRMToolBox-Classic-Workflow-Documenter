@@ -2,6 +2,9 @@
 
 Parses unmanaged Dynamics 365 solution ZIP files, extracts classic workflow metadata, generates quality/dependency analysis, and produces workflow documentation artifacts.
 
+<img width="966" height="893" alt="image" src="https://github.com/user-attachments/assets/787c9098-0b31-48ca-810e-ad5351364cb7" />
+
+
 ## Current Capabilities
 
 - Classic workflow extraction from unmanaged solution ZIP packages.
