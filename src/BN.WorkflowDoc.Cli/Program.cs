@@ -1,5 +1,7 @@
 using System.IO.Compression;
 using System.Text.Json;
+using System.Text.Json.Serialization;
+using BN.WorkflowDoc.Cli;
 using BN.WorkflowDoc.Core.Application;
 using BN.WorkflowDoc.Core.Contracts;
 using BN.WorkflowDoc.Core.Domain;
@@ -14,6 +16,7 @@ if (args.Length == 0 || string.IsNullOrWhiteSpace(args[0]))
     Console.Error.WriteLine("  BN.WorkflowDoc.Cli docx <path-to-unmanaged-solution.zip> [output-folder] [--diagram-detail standard|detailed]");
     Console.Error.WriteLine("  BN.WorkflowDoc.Cli pack <path-to-unmanaged-solution.zip> [output-folder] [--diagram-detail standard|detailed]");
     Console.Error.WriteLine("  BN.WorkflowDoc.Cli batch <zip|folder|glob> [output-folder] [--diagram-detail standard|detailed]");
+    Console.Error.WriteLine("  BN.WorkflowDoc.Cli docx-live <live-request.json> [output-folder] [--diagram-detail standard|detailed]");
     return 2;
 }
 
@@ -21,8 +24,82 @@ var (command, inputSpec, outputFolder, diagramDetailLevel) = ResolveCommand(args
 
 var options = new JsonSerializerOptions
 {
-    WriteIndented = true
+    WriteIndented = true,
+    PropertyNameCaseInsensitive = true,
+    Converters = { new JsonStringEnumConverter() }
 };
+
+if (string.Equals(command, "docx-live", StringComparison.OrdinalIgnoreCase))
+{
+    if (!File.Exists(inputSpec))
+    {
+        Console.Error.WriteLine($"Live request JSON not found: {inputSpec}");
+        return 2;
+    }
+
+    var requestJson = await File.ReadAllTextAsync(inputSpec);
+    var liveRequest = JsonSerializer.Deserialize<LiveWorkflowDocumentationRequest>(requestJson, options);
+    if (liveRequest is null)
+    {
+        Console.Error.WriteLine($"Live request JSON could not be parsed: {inputSpec}");
+        return 2;
+    }
+
+    var workflowBuilder = new DeterministicWorkflowDocumentBuilder();
+    var overviewBuilder = new DeterministicOverviewDocumentBuilder();
+    var documentationPipeline = new WorkflowDocumentationPipeline(
+        new WorkflowExtractionPipeline(new SolutionPackageReader(), new WorkflowDefinitionParser()),
+        workflowBuilder,
+        overviewBuilder);
+
+    var request = LiveWorkflowTransportMapper.ToRequest(liveRequest);
+    var docResult = await documentationPipeline.GenerateAsync(request);
+    var resolvedOutputFolder = string.IsNullOrWhiteSpace(outputFolder)
+        ? Path.Combine(Directory.GetCurrentDirectory(), "artifacts", ArtifactPathNaming.SanitizeFileName(request.SourceName, "live-selection"))
+        : Path.GetFullPath(outputFolder);
+    Directory.CreateDirectory(resolvedOutputFolder);
+
+    var docxWriter = new OpenXmlDocxArtifactWriter(new DeterministicPngDiagramRenderer(diagramDetailLevel));
+    var docxResult = docResult.Value is null
+        ? new ParseResult<DocxArtifactResult>(ProcessingStatus.Failed, null, docResult.Warnings, docResult.ErrorMessage ?? "Documentation model generation failed.")
+        : await docxWriter.WriteAsync(docResult.Value, resolvedOutputFolder);
+
+    var manifestPath = Path.Combine(resolvedOutputFolder, "bundle-manifest.json");
+    if (docxResult.Value is not null)
+    {
+        var workflowEntries = docResult.Value.WorkflowDocuments.Select((workflow, index) => new WorkflowArtifactManifestEntry(
+            WorkflowName: workflow.WorkflowName,
+            PrimaryDocumentFile: index < docxResult.Value.WorkflowFiles.Count ? docxResult.Value.WorkflowFiles[index] : string.Empty,
+            DiagramFiles: Array.Empty<string>())).ToArray();
+
+        var bundleManifest = new ArtifactBundleManifest(
+            Mode: "docx-live",
+            Status: docxResult.Status.ToString(),
+            Input: inputSpec,
+            OutputFolder: resolvedOutputFolder,
+            OverviewFile: docxResult.Value.OverviewFile,
+            Workflows: workflowEntries,
+            DiagramAssets: Array.Empty<DiagramAssetManifestEntry>(),
+            Warnings: docxResult.Warnings.Select(ToManifestWarning).ToArray(),
+            Error: docxResult.ErrorMessage);
+
+        await File.WriteAllTextAsync(manifestPath, JsonSerializer.Serialize(bundleManifest, options));
+    }
+
+    Console.WriteLine(JsonSerializer.Serialize(new
+    {
+        status = docxResult.Status.ToString(),
+        input = inputSpec,
+        outputFolder = resolvedOutputFolder,
+        workflowDocxFiles = docxResult.Value?.WorkflowFiles ?? Array.Empty<string>(),
+        overviewDocxFile = docxResult.Value?.OverviewFile,
+        manifestFile = File.Exists(manifestPath) ? manifestPath : null,
+        warnings = docxResult.Warnings.Select(ToManifestWarning),
+        error = docxResult.ErrorMessage
+    }, options));
+
+    return docxResult.Status == ProcessingStatus.Failed ? 1 : 0;
+}
 
 var reader = new SolutionPackageReader();
 var parser = new WorkflowDefinitionParser();
@@ -388,7 +465,8 @@ static (string Command, string ZipPath, string? OutputFolder, DiagramDetailLevel
         || string.Equals(cliArgs[0], "document", StringComparison.OrdinalIgnoreCase)
         || string.Equals(cliArgs[0], "docx", StringComparison.OrdinalIgnoreCase)
         || string.Equals(cliArgs[0], "pack", StringComparison.OrdinalIgnoreCase)
-        || string.Equals(cliArgs[0], "batch", StringComparison.OrdinalIgnoreCase)))
+        || string.Equals(cliArgs[0], "batch", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(cliArgs[0], "docx-live", StringComparison.OrdinalIgnoreCase)))
     {
         var command = cliArgs[0];
         var input = cliArgs[1];
@@ -398,7 +476,8 @@ static (string Command, string ZipPath, string? OutputFolder, DiagramDetailLevel
         if ((string.Equals(command, "document", StringComparison.OrdinalIgnoreCase)
             || string.Equals(command, "docx", StringComparison.OrdinalIgnoreCase)
             || string.Equals(command, "pack", StringComparison.OrdinalIgnoreCase)
-            || string.Equals(command, "batch", StringComparison.OrdinalIgnoreCase))
+            || string.Equals(command, "batch", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(command, "docx-live", StringComparison.OrdinalIgnoreCase))
             && cliArgs.Length >= 3
             && !cliArgs[2].StartsWith("--", StringComparison.Ordinal))
         {

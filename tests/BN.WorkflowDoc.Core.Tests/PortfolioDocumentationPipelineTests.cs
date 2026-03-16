@@ -122,5 +122,14 @@ public sealed class PortfolioDocumentationPipelineTests
                 [new ProcessingWarning("MISSING", "input missing", solutionZipPath, true, WarningCategory.Input, WarningSeverity.Error)],
                 "input missing"));
         }
+
+        public Task<ParseResult<DocumentationGenerationResult>> GenerateAsync(WorkflowDocumentationRequest request, CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult(new ParseResult<DocumentationGenerationResult>(
+                ProcessingStatus.Failed,
+                null,
+                [new ProcessingWarning("NOT_SUPPORTED", "In-memory requests are not configured in this fake pipeline.", request.SourceName, true, WarningCategory.Input, WarningSeverity.Error)],
+                "not supported"));
+        }
     }
 }

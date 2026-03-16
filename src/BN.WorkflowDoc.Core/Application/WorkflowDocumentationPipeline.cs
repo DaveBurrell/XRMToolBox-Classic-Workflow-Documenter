@@ -36,6 +36,13 @@ public interface IWorkflowDocumentationPipeline
     Task<ParseResult<DocumentationGenerationResult>> GenerateAsync(
         string solutionZipPath,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Generates workflow-level and overview documentation models for an in-memory workflow selection.
+    /// </summary>
+    Task<ParseResult<DocumentationGenerationResult>> GenerateAsync(
+        WorkflowDocumentationRequest request,
+        CancellationToken cancellationToken = default);
 }
 
 public sealed class WorkflowDocumentationPipeline : IWorkflowDocumentationPipeline
@@ -71,8 +78,79 @@ public sealed class WorkflowDocumentationPipeline : IWorkflowDocumentationPipeli
                 extractionResult.ErrorMessage ?? "Failed to extract workflows.");
         }
 
-        var warnings = new List<ProcessingWarning>(extractionResult.Warnings);
-        var workflowCount = extractionResult.Value.Workflows.Count;
+        return await GenerateFromWorkflowsAsync(
+            sourceName: Path.GetFileNameWithoutExtension(solutionZipPath),
+            sourcePath: solutionZipPath,
+            version: extractionResult.Value.Version,
+            workflows: extractionResult.Value.Workflows,
+            initialWarnings: extractionResult.Warnings,
+            initialStatus: extractionResult.Status,
+            startWorkingSet: startWorkingSet,
+            stopwatch: stopwatch,
+            cancellationToken: cancellationToken).ConfigureAwait(false);
+    }
+
+    public Task<ParseResult<DocumentationGenerationResult>> GenerateAsync(
+        WorkflowDocumentationRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        if (request is null)
+        {
+            throw new ArgumentNullException(nameof(request));
+        }
+
+        var startWorkingSet = Process.GetCurrentProcess().WorkingSet64;
+        var stopwatch = Stopwatch.StartNew();
+
+        return GenerateFromWorkflowsAsync(
+            sourceName: string.IsNullOrWhiteSpace(request.SourceName) ? "Workflow Selection" : request.SourceName,
+            sourcePath: request.SourceName,
+            version: "live",
+            workflows: request.Workflows ?? Array.Empty<WorkflowDefinition>(),
+            initialWarnings: request.Warnings ?? Array.Empty<ProcessingWarning>(),
+            initialStatus: ProcessingStatus.Success,
+            startWorkingSet: startWorkingSet,
+            stopwatch: stopwatch,
+            cancellationToken: cancellationToken);
+    }
+
+    private async Task<ParseResult<DocumentationGenerationResult>> GenerateFromWorkflowsAsync(
+        string sourceName,
+        string sourcePath,
+        string version,
+        IReadOnlyList<WorkflowDefinition> workflows,
+        IReadOnlyList<ProcessingWarning> initialWarnings,
+        ProcessingStatus initialStatus,
+        long startWorkingSet,
+        Stopwatch stopwatch,
+        CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+
+        if (workflows.Count == 0)
+        {
+            stopwatch.Stop();
+
+            var selectionWarnings = new List<ProcessingWarning>(initialWarnings)
+            {
+                new(
+                    "WORKFLOW_SELECTION_EMPTY",
+                    "No workflows were provided for documentation generation.",
+                    sourceName,
+                    true,
+                    WarningCategory.Input,
+                    WarningSeverity.Error)
+            };
+
+            return new ParseResult<DocumentationGenerationResult>(
+                ProcessingStatus.Failed,
+                null,
+                selectionWarnings,
+                "No workflows were provided for documentation generation.");
+        }
+
+        var warnings = new List<ProcessingWarning>(initialWarnings);
+        var workflowCount = workflows.Count;
 
         var workflowDocuments = new WorkflowDocumentModel?[workflowCount];
         var warningQueue = new ConcurrentQueue<ProcessingWarning>();
@@ -82,7 +160,7 @@ public sealed class WorkflowDocumentationPipeline : IWorkflowDocumentationPipeli
         workerCount = Math.Min(workerCount, Math.Max(1, workflowCount));
 
         using var semaphore = new SemaphoreSlim(workerCount, workerCount);
-        var buildTasks = extractionResult.Value.Workflows.Select((workflow, index) =>
+        var buildTasks = workflows.Select((workflow, index) =>
             BuildWorkflowDocumentAsync(
                 workflow,
                 index,
@@ -123,7 +201,7 @@ public sealed class WorkflowDocumentationPipeline : IWorkflowDocumentationPipeli
         }
 
         var overviewResult = await _overviewDocumentBuilder
-            .BuildAsync(Path.GetFileNameWithoutExtension(solutionZipPath), extractionResult.Value.Workflows, cancellationToken)
+            .BuildAsync(sourceName, workflows, cancellationToken)
             .ConfigureAwait(false);
         warnings.AddRange(overviewResult.Warnings);
 
@@ -136,7 +214,7 @@ public sealed class WorkflowDocumentationPipeline : IWorkflowDocumentationPipeli
                 overviewResult.ErrorMessage ?? "Failed to build overview document.");
         }
 
-        var status = CalculateStatus(extractionResult.Status, warnings);
+        var status = CalculateStatus(initialStatus, warnings);
         stopwatch.Stop();
 
         var performance = new PipelinePerformanceMetrics(
@@ -147,7 +225,7 @@ public sealed class WorkflowDocumentationPipeline : IWorkflowDocumentationPipeli
             ParallelWorkersUsed: workerCount);
 
         var value = new DocumentationGenerationResult(
-            Package: extractionResult.Value,
+            Package: new SolutionPackage(sourcePath, string.Empty, version, workflows, warnings),
             WorkflowDocuments: orderedWorkflowDocuments,
             OverviewDocument: overviewResult.Value,
             Warnings: warnings,
