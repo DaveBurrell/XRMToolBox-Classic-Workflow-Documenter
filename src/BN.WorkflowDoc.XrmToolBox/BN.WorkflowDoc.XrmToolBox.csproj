@@ -14,8 +14,8 @@
     <CliOutputPath>..\BN.WorkflowDoc.Cli\bin\$(Configuration)\$(CliTargetFramework)</CliOutputPath>
     <CliBundlePath>$(IntermediateOutputPath)cli-runtime.zip</CliBundlePath>
     <CliSidecarBundleName>BN.WorkflowDoc.Cli.runtime.zip</CliSidecarBundleName>
-    <Version>1.0.2</Version>
-    <PackageVersion>1.0.2</PackageVersion>
+    <Version>1.0.3</Version>
+    <PackageVersion>1.0.3</PackageVersion>
     <PackageId>BN.WorkflowDoc.XrmToolBox</PackageId>
     <Title>BridgeNexa Workflow Documenter</Title>
     <Authors>Dave Burrell</Authors>
@@ -28,6 +28,7 @@
     <PackageOutputPath>..\..\artifacts\nuget</PackageOutputPath>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <IsPackable>true</IsPackable>
+    <IncludeBuildOutput>false</IncludeBuildOutput>
     <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
     <PublishRepositoryUrl>false</PublishRepositoryUrl>
     <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
@@ -49,9 +50,9 @@
   <ItemGroup>
     <None Include="..\..\README.md" Pack="true" PackagePath="\" Visible="false" />
     <None Include="Assets\BridgeNexa-Plugin-96.png" Pack="true" PackagePath="\" Visible="false" />
-    <None Include="$(OutputPath)$(AssemblyName).dll" Pack="true" PackagePath="Plugins" Visible="false" />
-    <None Include="$(OutputPath)$(AssemblyName).pdb" Pack="true" PackagePath="Plugins" Visible="false" Condition="Exists('$(OutputPath)$(AssemblyName).pdb')" />
-    <None Include="$(OutputPath)$(CliSidecarBundleName)" Pack="true" PackagePath="Plugins" Visible="false" Condition="Exists('$(OutputPath)$(CliSidecarBundleName)')" />
+    <None Include="$(OutputPath)$(AssemblyName).dll" Pack="true" PackagePath="lib\net48\Plugins\BN.WorkflowDoc.XrmToolBox" Visible="false" />
+    <None Include="$(OutputPath)$(AssemblyName).pdb" Pack="true" PackagePath="lib\net48\Plugins\BN.WorkflowDoc.XrmToolBox" Visible="false" Condition="Exists('$(OutputPath)$(AssemblyName).pdb')" />
+    <None Include="$(OutputPath)$(CliSidecarBundleName)" Pack="true" PackagePath="lib\net48\Plugins\BN.WorkflowDoc.XrmToolBox" Visible="false" Condition="Exists('$(OutputPath)$(CliSidecarBundleName)')" />
   </ItemGroup>
 
   <Target Name="BuildCliRuntimeBundle" BeforeTargets="CreateManifestResourceNames">

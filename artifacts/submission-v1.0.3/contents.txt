@@ -1,0 +1,7 @@
+submission-v1.0.3
+
+Files:
+- BN.WorkflowDoc.XrmToolBox.1.0.3.nupkg
+- release-plugin/BN.WorkflowDoc.XrmToolBox.dll
+- release-plugin/BN.WorkflowDoc.XrmToolBox.pdb
+- release-plugin/BN.WorkflowDoc.Cli.runtime.zip
