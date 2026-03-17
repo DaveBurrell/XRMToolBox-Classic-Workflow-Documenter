@@ -1,0 +1,11 @@
+submission-v1.0.4
+
+Package change:
+- CLI included as folder in nupkg lib/net48/Plugins/BN.WorkflowDoc.XrmToolBox/cli/
+- Embedding: Still includes zipped CLI runtime for fallback
+
+Files:
+- BN.WorkflowDoc.XrmToolBox.1.0.4.nupkg
+- release-plugin/BN.WorkflowDoc.XrmToolBox.dll
+- release-plugin/BN.WorkflowDoc.XrmToolBox.pdb
+- release-plugin/BN.WorkflowDoc.Cli.runtime.zip
