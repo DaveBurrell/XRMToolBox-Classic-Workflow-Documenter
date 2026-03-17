@@ -89,6 +89,7 @@ The repository also ships an XrmToolBox plugin named **BridgeNexa Workflow Docum
 - Connects to your Dataverse organization and loads classic process records.
 - Lets you filter and select workflows, dialogs, and actions.
 - Generates documentation by invoking the bundled CLI runtime from inside XrmToolBox.
+- Uses the packaged `cli/` runtime folder when available and retains the zipped runtime as a fallback for direct plugin deployment.
 - Produces either per-workflow DOCX files + overview, or one combined full-detail DOCX.
 
 ### Install The Plugin
@@ -110,7 +111,8 @@ dotnet pack src/BN.WorkflowDoc.XrmToolBox/BN.WorkflowDoc.XrmToolBox.csproj -c Re
 ```
 
 2. Use the generated package in `artifacts/nuget/` (or the prepared submission bundle under `artifacts/submission-v<version>/`).
-3. If deploying manually, copy the plugin payload files to your XrmToolBox plugin folder:
+3. If deploying from the `.nupkg`, preserve the packaged folder structure under `lib/net48/Plugins/BN.WorkflowDoc.XrmToolBox/`, including the bundled `cli/` folder.
+4. If deploying manually from the prepared `release-plugin` bundle instead, copy the plugin payload files to your XrmToolBox plugin folder:
 	- `BN.WorkflowDoc.XrmToolBox.dll`
 	- `BN.WorkflowDoc.XrmToolBox.pdb`
 	- `BN.WorkflowDoc.Cli.runtime.zip`

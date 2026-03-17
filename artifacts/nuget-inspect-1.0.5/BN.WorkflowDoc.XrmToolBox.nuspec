@@ -1,0 +1,25 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
+  <metadata>
+    <id>BN.WorkflowDoc.XrmToolBox</id>
+    <version>1.0.5</version>
+    <title>BridgeNexa Workflow Documenter</title>
+    <authors>Dave Burrell</authors>
+    <icon>BridgeNexa-Plugin-96.png</icon>
+    <readme>README.md</readme>
+    <projectUrl>https://github.com/DaveBurrell/XRMToolBox-Classic-Workflow-Documenter</projectUrl>
+    <description>Document classic workflows, dialogs, and actions from a live Dataverse environment through XrmToolBox.</description>
+    <tags>xrmtoolbox dataverse dynamics365 workflow documentation classic-workflow</tags>
+    <repository type="git" commit="b6607bff9615fb6245c6cfd146c5c88417891398" />
+    <frameworkAssemblies>
+      <frameworkAssembly assemblyName="System.IO.Compression" targetFramework=".NETFramework4.8" />
+      <frameworkAssembly assemblyName="System.IO" targetFramework=".NETFramework4.8" />
+      <frameworkAssembly assemblyName="System.Net.Http" targetFramework=".NETFramework4.8" />
+      <frameworkAssembly assemblyName="System.Runtime" targetFramework=".NETFramework4.8" />
+      <frameworkAssembly assemblyName="System.Security.Cryptography.Algorithms" targetFramework=".NETFramework4.8" />
+      <frameworkAssembly assemblyName="System.Security.Cryptography.Encoding" targetFramework=".NETFramework4.8" />
+      <frameworkAssembly assemblyName="System.Security.Cryptography.Primitives" targetFramework=".NETFramework4.8" />
+      <frameworkAssembly assemblyName="System.Security.Cryptography.X509Certificates" targetFramework=".NETFramework4.8" />
+    </frameworkAssemblies>
+  </metadata>
+</package>

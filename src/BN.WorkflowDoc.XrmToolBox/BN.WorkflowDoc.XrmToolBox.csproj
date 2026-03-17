@@ -14,15 +14,14 @@
     <CliOutputPath>..\BN.WorkflowDoc.Cli\bin\$(Configuration)\$(CliTargetFramework)</CliOutputPath>
     <CliBundlePath>$(IntermediateOutputPath)cli-runtime.zip</CliBundlePath>
     <CliSidecarBundleName>BN.WorkflowDoc.Cli.runtime.zip</CliSidecarBundleName>
-    <Version>1.0.4</Version>
-    <PackageVersion>1.0.4</PackageVersion>
+    <Version>1.0.5</Version>
+    <PackageVersion>1.0.5</PackageVersion>
     <PackageId>BN.WorkflowDoc.XrmToolBox</PackageId>
     <Title>BridgeNexa Workflow Documenter</Title>
     <Authors>Dave Burrell</Authors>
     <Company>BridgeNexa</Company>
     <PackageTags>xrmtoolbox dataverse dynamics365 workflow documentation classic-workflow</PackageTags>
-    <PackageProjectUrl>https://www.xrmtoolbox.com/</PackageProjectUrl>
-    <PackageIconUrl>https://www.xrmtoolbox.com/favicon.ico</PackageIconUrl>
+    <PackageProjectUrl>https://github.com/DaveBurrell/XRMToolBox-Classic-Workflow-Documenter</PackageProjectUrl>
     <PackageIcon>BridgeNexa-Plugin-96.png</PackageIcon>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageOutputPath>..\..\artifacts\nuget</PackageOutputPath>
@@ -52,6 +51,8 @@
     <None Include="Assets\BridgeNexa-Plugin-96.png" Pack="true" PackagePath="\" Visible="false" />
     <None Include="$(OutputPath)$(AssemblyName).dll" Pack="true" PackagePath="lib\net48\Plugins\BN.WorkflowDoc.XrmToolBox" Visible="false" />
     <None Include="$(OutputPath)$(AssemblyName).pdb" Pack="true" PackagePath="lib\net48\Plugins\BN.WorkflowDoc.XrmToolBox" Visible="false" Condition="Exists('$(OutputPath)$(AssemblyName).pdb')" />
+    <None Include="$(OutputPath)System.Text.Json.dll" Pack="true" PackagePath="lib\net48\Plugins\BN.WorkflowDoc.XrmToolBox" Visible="false" Condition="Exists('$(OutputPath)System.Text.Json.dll')" />
+    <None Include="$(OutputPath)System.Text.Encodings.Web.dll" Pack="true" PackagePath="lib\net48\Plugins\BN.WorkflowDoc.XrmToolBox" Visible="false" Condition="Exists('$(OutputPath)System.Text.Encodings.Web.dll')" />
     <None Include="$(CliOutputPath)\**\*" Pack="true" PackagePath="lib\net48\Plugins\BN.WorkflowDoc.XrmToolBox\cli" Visible="false" />
   </ItemGroup>
 

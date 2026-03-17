@@ -4,6 +4,19 @@ All notable changes to this project are documented in this file.
 
 The format is based on Keep a Changelog and this project follows Semantic Versioning.
 
+## [1.0.5] - 2026-03-17
+
+### Added
+- XrmToolBox package payload now includes the bundled CLI runtime as a `cli/` folder inside the plugin package.
+- Plugin package now carries the required `System.Text.Json` runtime dependencies alongside the plugin assembly.
+
+### Changed
+- Updated XrmToolBox plugin notifications to use the supported notification control API.
+- Refined plugin store metadata to point to the public GitHub repository and README help entry point.
+
+### Notes
+- Submission bundle prepared under `artifacts/submission-v1.0.5`.
+
 ## [1.0.0] - 2026-03-16
 
 ### Added
@@ -31,4 +44,5 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 ### Notes
 - This is the first public baseline release of the project.
 
+[1.0.5]: https://github.com/DaveBurrell/BridgeNexa-Workflow-Documenter/releases/tag/v1.0.5
 [1.0.0]: https://github.com/DaveBurrell/BridgeNexa-Workflow-Documenter/releases/tag/v1.0.0

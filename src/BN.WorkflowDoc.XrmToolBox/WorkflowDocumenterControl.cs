@@ -9,6 +9,7 @@ using System.Drawing;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
 using XrmToolBox.Extensibility;
+using XrmToolBox.Extensibility.UserControls;
 
 namespace BN.WorkflowDoc.XrmToolBox;
 
@@ -40,8 +41,7 @@ public sealed class WorkflowDocumenterControl : PluginControlBase
     private readonly ListView _workflowList;
     private IReadOnlyList<WorkflowCatalogItem> _catalogItems = Array.Empty<WorkflowCatalogItem>();
     private readonly HashSet<Guid> _selectedWorkflowIds = new();
-    private readonly string _settingsFilePath;
-    private WorkflowPluginSettings _settings;
+    private WorkflowPluginSettings _settings = new();
     private bool _suppressSelectionEvents;
     private int _filteredItemCount;
 
@@ -53,12 +53,10 @@ public sealed class WorkflowDocumenterControl : PluginControlBase
     internal WorkflowDocumenterControl(IDataverseWorkflowProvider workflowProvider)
     {
         _workflowProvider = workflowProvider;
-        _settingsFilePath = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "BridgeNexa",
-            "WorkflowDocumenter",
-            "xrmtoolbox-settings.json");
-        _settings = LoadSettings(_settingsFilePath);
+        if (!SettingsManager.Instance.TryLoad(GetType(), out _settings))
+        {
+            _settings = new WorkflowPluginSettings();
+        }
 
         Dock = DockStyle.Fill;
 
@@ -388,8 +386,8 @@ public sealed class WorkflowDocumenterControl : PluginControlBase
             }
 
             outputFolder = dialog.SelectedPath;
-            _settings = _settings with { OutputFolder = outputFolder };
-            SaveSettings(_settingsFilePath, _settings);
+            _settings.OutputFolder = outputFolder;
+            SettingsManager.Instance.Save(GetType(), _settings);
         }
 
         _exportButton.Enabled = false;
@@ -458,16 +456,19 @@ public sealed class WorkflowDocumenterControl : PluginControlBase
                 var workflowFileCount = result.WorkerResult.Payload.WorkflowDocxFiles?.Count ?? 0;
                 var workerWarningCount = result.WorkerResult.Payload.Warnings?.Count ?? 0;
                 var warningCount = result.DefinitionResult.Warnings.Count + workerWarningCount;
-                var message = _settings.OutputMode == OutputMode.SingleDocument
-                    ? $"Generated a combined full-detail document for {selectedIds.Length} selected workflow(s) in:{Environment.NewLine}{result.WorkerResult.Payload.OutputFolder}{Environment.NewLine}{Environment.NewLine}File:{Environment.NewLine}{result.WorkerResult.Payload.CombinedFullDetailDocxFile ?? "combined-full-detail.docx"}"
-                    : $"Generated {workflowFileCount} workflow documents and an overview document in:{Environment.NewLine}{result.WorkerResult.Payload.OutputFolder}";
+                var message = _settings.OutputMode == WorkflowOutputMode.SingleDocument
+                    ? $"Generated a combined full-detail document for {selectedIds.Length} selected workflow(s). Output: {result.WorkerResult.Payload.OutputFolder}"
+                    : $"Generated {workflowFileCount} workflow documents and an overview document. Output: {result.WorkerResult.Payload.OutputFolder}";
 
                 if (warningCount > 0)
                 {
-                    message += $"{Environment.NewLine}{Environment.NewLine}Warnings: {warningCount}. Review the generated appendices and CLI output for details.";
+                    message += $" ({warningCount} warning(s) - see generated appendices for details)";
+                    ShowStatusNotification(message, NotificationType.Warning);
                 }
-
-                MessageBox.Show(this, message, "Generate documents", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                else
+                {
+                    ShowStatusNotification(message, NotificationType.Info);
+                }
 
                 try
                 {
@@ -523,9 +524,9 @@ public sealed class WorkflowDocumenterControl : PluginControlBase
 
     private static ProcessStartInfo BuildStartInfo(string cliPath, string requestPath, string outputFolder, WorkflowPluginSettings settings)
     {
-        var diagramDetail = settings.DiagramDetail == DiagramDetail.Standard ? "standard" : "detailed";
-        var narrativeTone = settings.NarrativeTone == NarrativeTone.Technical ? "technical" : "business";
-        var outputMode = settings.OutputMode == OutputMode.SingleDocument ? "single" : "per-workflow";
+        var diagramDetail = settings.DiagramDetail == WorkflowDiagramDetail.Standard ? "standard" : "detailed";
+        var narrativeTone = settings.NarrativeTone == WorkflowNarrativeTone.Technical ? "technical" : "business";
+        var outputMode = settings.OutputMode == WorkflowOutputMode.SingleDocument ? "single" : "per-workflow";
 
         var argumentBuilder = new StringBuilder();
         argumentBuilder.Append("docx-live ");
@@ -867,6 +868,14 @@ public sealed class WorkflowDocumenterControl : PluginControlBase
         }
     }
 
+    private void ShowStatusNotification(string message, NotificationType type)
+    {
+        Notification.Message = message;
+        Notification.Type = type;
+        Notification.CanBeClosed = true;
+        Notification.SetVisible(true, 10000);
+    }
+
     private void OpenSettingsDialog()
     {
         using var dialog = new WorkflowSettingsDialog(_settings);
@@ -876,45 +885,7 @@ public sealed class WorkflowDocumenterControl : PluginControlBase
         }
 
         _settings = dialog.Settings;
-        SaveSettings(_settingsFilePath, _settings);
-    }
-
-    private static WorkflowPluginSettings LoadSettings(string path)
-    {
-        try
-        {
-            if (!File.Exists(path))
-            {
-                return new WorkflowPluginSettings();
-            }
-
-            var json = File.ReadAllText(path);
-            var loaded = JsonSerializer.Deserialize<WorkflowPluginSettings>(json, JsonOptions);
-            return loaded ?? new WorkflowPluginSettings();
-        }
-        catch
-        {
-            return new WorkflowPluginSettings();
-        }
-    }
-
-    private static void SaveSettings(string path, WorkflowPluginSettings settings)
-    {
-        try
-        {
-            var directory = Path.GetDirectoryName(path);
-            if (!string.IsNullOrWhiteSpace(directory))
-            {
-                Directory.CreateDirectory(directory);
-            }
-
-            var json = JsonSerializer.Serialize(settings, JsonOptions);
-            File.WriteAllText(path, json);
-        }
-        catch
-        {
-            // Settings persistence should not block plugin usage.
-        }
+        SettingsManager.Instance.Save(GetType(), _settings);
     }
 
     private sealed class WorkflowSettingsDialog : Form
@@ -979,7 +950,7 @@ public sealed class WorkflowDocumenterControl : PluginControlBase
             };
             _narrativeToneCombo.Items.Add("Business (non-technical)");
             _narrativeToneCombo.Items.Add("Technical");
-            _narrativeToneCombo.SelectedIndex = settings.NarrativeTone == NarrativeTone.Technical ? 1 : 0;
+            _narrativeToneCombo.SelectedIndex = settings.NarrativeTone == WorkflowNarrativeTone.Technical ? 1 : 0;
             layout.Controls.Add(_narrativeToneCombo, 1, 1);
 
             layout.Controls.Add(new Label { Text = "Diagram detail", AutoSize = true, Margin = new Padding(0, 12, 8, 0) }, 0, 2);
@@ -991,7 +962,7 @@ public sealed class WorkflowDocumenterControl : PluginControlBase
             };
             _diagramDetailCombo.Items.Add("Detailed");
             _diagramDetailCombo.Items.Add("Standard (less detailed)");
-            _diagramDetailCombo.SelectedIndex = settings.DiagramDetail == DiagramDetail.Standard ? 1 : 0;
+            _diagramDetailCombo.SelectedIndex = settings.DiagramDetail == WorkflowDiagramDetail.Standard ? 1 : 0;
             layout.Controls.Add(_diagramDetailCombo, 1, 2);
 
             layout.Controls.Add(new Label { Text = "Output documents", AutoSize = true, Margin = new Padding(0, 12, 8, 0) }, 0, 3);
@@ -1003,7 +974,7 @@ public sealed class WorkflowDocumenterControl : PluginControlBase
             };
             _outputModeCombo.Items.Add("Per-workflow documents + overview");
             _outputModeCombo.Items.Add("Single combined full-detail document");
-            _outputModeCombo.SelectedIndex = settings.OutputMode == OutputMode.SingleDocument ? 1 : 0;
+            _outputModeCombo.SelectedIndex = settings.OutputMode == WorkflowOutputMode.SingleDocument ? 1 : 0;
             layout.Controls.Add(_outputModeCombo, 1, 3);
 
             var buttons = new FlowLayoutPanel
@@ -1026,36 +997,14 @@ public sealed class WorkflowDocumenterControl : PluginControlBase
             Controls.Add(layout);
         }
 
-        public WorkflowPluginSettings Settings => new(
-            OutputFolder: string.IsNullOrWhiteSpace(_outputPathTextBox.Text) ? null : _outputPathTextBox.Text.Trim(),
-            NarrativeTone: _narrativeToneCombo.SelectedIndex == 1 ? NarrativeTone.Technical : NarrativeTone.Business,
-            DiagramDetail: _diagramDetailCombo.SelectedIndex == 1 ? DiagramDetail.Standard : DiagramDetail.Detailed,
-            OutputMode: _outputModeCombo.SelectedIndex == 1 ? OutputMode.SingleDocument : OutputMode.PerWorkflowAndOverview);
+        public WorkflowPluginSettings Settings => new()
+        {
+            OutputFolder = string.IsNullOrWhiteSpace(_outputPathTextBox.Text) ? null : _outputPathTextBox.Text.Trim(),
+            NarrativeTone = _narrativeToneCombo.SelectedIndex == 1 ? WorkflowNarrativeTone.Technical : WorkflowNarrativeTone.Business,
+            DiagramDetail = _diagramDetailCombo.SelectedIndex == 1 ? WorkflowDiagramDetail.Standard : WorkflowDiagramDetail.Detailed,
+            OutputMode = _outputModeCombo.SelectedIndex == 1 ? WorkflowOutputMode.SingleDocument : WorkflowOutputMode.PerWorkflowAndOverview
+        };
     }
-
-    private enum NarrativeTone
-    {
-        Business,
-        Technical
-    }
-
-    private enum DiagramDetail
-    {
-        Detailed,
-        Standard
-    }
-
-    private enum OutputMode
-    {
-        PerWorkflowAndOverview,
-        SingleDocument
-    }
-
-    private sealed record WorkflowPluginSettings(
-        string? OutputFolder = null,
-        NarrativeTone NarrativeTone = NarrativeTone.Business,
-        DiagramDetail DiagramDetail = DiagramDetail.Detailed,
-        OutputMode OutputMode = OutputMode.PerWorkflowAndOverview);
 
     private sealed class WorkflowExportResult
     {
@@ -1098,4 +1047,30 @@ public sealed class WorkflowDocumenterControl : PluginControlBase
 
         public string StdErr { get; }
     }
+}
+
+public enum WorkflowNarrativeTone
+{
+    Business,
+    Technical
+}
+
+public enum WorkflowDiagramDetail
+{
+    Detailed,
+    Standard
+}
+
+public enum WorkflowOutputMode
+{
+    PerWorkflowAndOverview,
+    SingleDocument
+}
+
+public sealed class WorkflowPluginSettings
+{
+    public string? OutputFolder { get; set; }
+    public WorkflowNarrativeTone NarrativeTone { get; set; } = WorkflowNarrativeTone.Business;
+    public WorkflowDiagramDetail DiagramDetail { get; set; } = WorkflowDiagramDetail.Detailed;
+    public WorkflowOutputMode OutputMode { get; set; } = WorkflowOutputMode.PerWorkflowAndOverview;
 }

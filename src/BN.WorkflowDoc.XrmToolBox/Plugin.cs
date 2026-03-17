@@ -12,8 +12,13 @@ namespace BN.WorkflowDoc.XrmToolBox;
 [ExportMetadata("BackgroundColor", "#F1EEE8")]
 [ExportMetadata("PrimaryFontColor", "#1F2937")]
 [ExportMetadata("SecondaryFontColor", "#6B7280")]
-public sealed class Plugin : PluginBase, INoConnectionRequired
+public sealed class Plugin : PluginBase, INoConnectionRequired, IGitHubPlugin, IHelpPlugin
 {
+    public string UserName => "DaveBurrell";
+    public string RepositoryName => "XRMToolBox-Classic-Workflow-Documenter";
+
+    public string HelpUrl => "https://github.com/DaveBurrell/XRMToolBox-Classic-Workflow-Documenter#readme";
+
     public override IXrmToolBoxPluginControl GetControl()
     {
         return new WorkflowDocumenterControl();
