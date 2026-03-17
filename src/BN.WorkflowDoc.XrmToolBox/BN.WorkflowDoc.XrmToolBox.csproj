@@ -14,8 +14,8 @@
     <CliOutputPath>..\BN.WorkflowDoc.Cli\bin\$(Configuration)\$(CliTargetFramework)</CliOutputPath>
     <CliBundlePath>$(IntermediateOutputPath)cli-runtime.zip</CliBundlePath>
     <CliSidecarBundleName>BN.WorkflowDoc.Cli.runtime.zip</CliSidecarBundleName>
-    <Version>1.0.5</Version>
-    <PackageVersion>1.0.5</PackageVersion>
+    <Version>1.0.7</Version>
+    <PackageVersion>1.0.7</PackageVersion>
     <PackageId>BN.WorkflowDoc.XrmToolBox</PackageId>
     <Title>BridgeNexa Workflow Documenter</Title>
     <Authors>Dave Burrell</Authors>

@@ -128,3 +128,9 @@ internal sealed record CliWarning(
     bool Blocking,
     string Category,
     string Severity);
+
+internal sealed record WorkflowSolutionItem(
+    Guid SolutionId,
+    string UniqueName,
+    string DisplayName,
+    bool IsManaged);

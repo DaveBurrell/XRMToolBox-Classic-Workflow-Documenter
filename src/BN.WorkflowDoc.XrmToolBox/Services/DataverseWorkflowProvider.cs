@@ -7,8 +7,13 @@ namespace BN.WorkflowDoc.XrmToolBox.Services;
 
 internal interface IDataverseWorkflowProvider
 {
+    Task<ParseResult<IReadOnlyList<WorkflowSolutionItem>>> GetSolutionsAsync(
+        IOrganizationService service,
+        CancellationToken cancellationToken = default);
+
     Task<ParseResult<IReadOnlyList<WorkflowCatalogItem>>> GetCatalogAsync(
         IOrganizationService service,
+        Guid? solutionId = null,
         CancellationToken cancellationToken = default);
 
     Task<ParseResult<IReadOnlyList<WorkflowDefinitionPayload>>> GetDefinitionsAsync(
@@ -20,9 +25,11 @@ internal interface IDataverseWorkflowProvider
 internal sealed class DataverseWorkflowProvider : IDataverseWorkflowProvider
 {
     private static readonly int[] SupportedCategories = [0, 1, 3];
+    private const int WorkflowSolutionComponentTypeCode = 29;
 
     public Task<ParseResult<IReadOnlyList<WorkflowCatalogItem>>> GetCatalogAsync(
         IOrganizationService service,
+        Guid? solutionId = null,
         CancellationToken cancellationToken = default)
     {
         return Task.Run(() =>
@@ -31,9 +38,10 @@ internal sealed class DataverseWorkflowProvider : IDataverseWorkflowProvider
 
             try
             {
-                var rows = RetrieveAll(service, BuildCatalogQuery(), cancellationToken);
+                var rows = RetrieveAll(service, BuildCatalogQuery(solutionId), cancellationToken);
                 var items = rows
-                    .Select(entity => MapCatalogItem(entity))
+                    .GroupBy(entity => entity.Id)
+                    .Select(group => MapCatalogItem(group.First()))
                     .OrderBy(item => item.DisplayName, StringComparer.OrdinalIgnoreCase)
                     .ToArray();
 
@@ -108,9 +116,49 @@ internal sealed class DataverseWorkflowProvider : IDataverseWorkflowProvider
         }, cancellationToken);
     }
 
-    private static QueryExpression BuildCatalogQuery()
+    public Task<ParseResult<IReadOnlyList<WorkflowSolutionItem>>> GetSolutionsAsync(
+        IOrganizationService service,
+        CancellationToken cancellationToken = default)
     {
-        return new QueryExpression("workflow")
+        return Task.Run(() =>
+        {
+            var warnings = new List<ProcessingWarning>();
+
+            try
+            {
+                var rows = RetrieveAll(service, BuildSolutionsQuery(), cancellationToken);
+                var items = rows
+                    .Select(entity => new WorkflowSolutionItem(
+                        entity.Id,
+                        entity.GetAttributeValue<string>("uniquename") ?? "unknown_solution",
+                        string.IsNullOrWhiteSpace(entity.GetAttributeValue<string>("friendlyname"))
+                            ? entity.GetAttributeValue<string>("uniquename") ?? "Unnamed Solution"
+                            : entity.GetAttributeValue<string>("friendlyname")!,
+                        entity.GetAttributeValue<bool?>("ismanaged") ?? false))
+                    .OrderBy(item => item.DisplayName, StringComparer.OrdinalIgnoreCase)
+                    .ThenBy(item => item.UniqueName, StringComparer.OrdinalIgnoreCase)
+                    .ToArray();
+
+                return new ParseResult<IReadOnlyList<WorkflowSolutionItem>>(ProcessingStatus.Success, items, warnings);
+            }
+            catch (Exception ex)
+            {
+                warnings.Add(new ProcessingWarning(
+                    "DATAVERSE_WORKFLOW_SOLUTIONS_FAILED",
+                    ex.Message,
+                    "solution",
+                    true,
+                    WarningCategory.Input,
+                    WarningSeverity.Error));
+
+                return new ParseResult<IReadOnlyList<WorkflowSolutionItem>>(ProcessingStatus.Failed, null, warnings, ex.Message);
+            }
+        }, cancellationToken);
+    }
+
+    private static QueryExpression BuildCatalogQuery(Guid? solutionId)
+    {
+        var query = new QueryExpression("workflow")
         {
             ColumnSet = new ColumnSet("workflowid", "name", "category", "primaryentity", "mode", "scope", "ownerid", "ondemand", "triggeroncreate", "triggerondelete", "triggeronupdateattributelist", "statecode"),
             Criteria = new FilterExpression(LogicalOperator.And)
@@ -130,6 +178,15 @@ internal sealed class DataverseWorkflowProvider : IDataverseWorkflowProvider
                 PageNumber = 1
             }
         };
+
+        if (solutionId.HasValue)
+        {
+            var solutionComponentLink = query.AddLink("solutioncomponent", "workflowid", "objectid", JoinOperator.Inner);
+            solutionComponentLink.LinkCriteria.AddCondition("componenttype", ConditionOperator.Equal, WorkflowSolutionComponentTypeCode);
+            solutionComponentLink.LinkCriteria.AddCondition("solutionid", ConditionOperator.Equal, solutionId.Value);
+        }
+
+        return query;
     }
 
     private static QueryExpression BuildDefinitionQuery(IReadOnlyList<Guid> workflowIds)
@@ -143,6 +200,31 @@ internal sealed class DataverseWorkflowProvider : IDataverseWorkflowProvider
                 {
                     new ConditionExpression("workflowid", ConditionOperator.In, workflowIds.Cast<object>().ToArray())
                 }
+            },
+            PageInfo = new PagingInfo
+            {
+                Count = 250,
+                PageNumber = 1
+            }
+        };
+    }
+
+    private static QueryExpression BuildSolutionsQuery()
+    {
+        return new QueryExpression("solution")
+        {
+            ColumnSet = new ColumnSet("solutionid", "uniquename", "friendlyname", "ismanaged", "isvisible"),
+            Criteria = new FilterExpression(LogicalOperator.And)
+            {
+                Conditions =
+                {
+                    new ConditionExpression("isvisible", ConditionOperator.Equal, true)
+                }
+            },
+            Orders =
+            {
+                new OrderExpression("friendlyname", OrderType.Ascending),
+                new OrderExpression("uniquename", OrderType.Ascending)
             },
             PageInfo = new PagingInfo
             {

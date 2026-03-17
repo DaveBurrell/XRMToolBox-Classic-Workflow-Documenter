@@ -39,11 +39,15 @@ public sealed class WorkflowDocumenterControl : PluginControlBase
     private readonly Label _summaryLabel;
     private readonly Label _timestampLabel;
     private readonly ListView _workflowList;
+    private readonly ComboBox _solutionScopeComboBox;
     private IReadOnlyList<WorkflowCatalogItem> _catalogItems = Array.Empty<WorkflowCatalogItem>();
+    private IReadOnlyList<WorkflowSolutionItem> _solutionItems = Array.Empty<WorkflowSolutionItem>();
     private readonly HashSet<Guid> _selectedWorkflowIds = new();
     private WorkflowPluginSettings _settings = new();
     private bool _suppressSelectionEvents;
+    private bool _suppressSolutionSelectionEvents;
     private int _filteredItemCount;
+    private Guid? _selectedSolutionId;
 
     public WorkflowDocumenterControl()
         : this(new DataverseWorkflowProvider())
@@ -89,7 +93,7 @@ public sealed class WorkflowDocumenterControl : PluginControlBase
         {
             Dock = DockStyle.Fill,
             ColumnCount = 2,
-            RowCount = 2,
+            RowCount = 3,
             Margin = new Padding(0),
             BackColor = Color.White
         };
@@ -97,6 +101,7 @@ public sealed class WorkflowDocumenterControl : PluginControlBase
         filterPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 52));
         filterPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         filterPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        filterPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
 
         var searchHeader = new Label
         {
@@ -163,6 +168,41 @@ public sealed class WorkflowDocumenterControl : PluginControlBase
 
         filterPanel.Controls.Add(chipPanel, 1, 1);
 
+        var solutionScopePanel = new TableLayoutPanel
+        {
+            Dock = DockStyle.Top,
+            ColumnCount = 1,
+            RowCount = 2,
+            Margin = new Padding(0, 8, 0, 0),
+            AutoSize = true
+        };
+        solutionScopePanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        solutionScopePanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+
+        var solutionScopeHeader = new Label
+        {
+            AutoSize = true,
+            Text = "SOLUTION SCOPE",
+            Font = new Font("Segoe UI", 8.5f, FontStyle.Bold),
+            ForeColor = Color.FromArgb(87, 96, 115),
+            Margin = new Padding(0, 0, 0, 6)
+        };
+
+        _solutionScopeComboBox = new ComboBox
+        {
+            DropDownStyle = ComboBoxStyle.DropDownList,
+            Width = 520,
+            Font = new Font("Segoe UI", 9f),
+            Margin = new Padding(0)
+        };
+        _solutionScopeComboBox.SelectedIndexChanged += (_, _) => HandleSolutionScopeChanged();
+
+        solutionScopePanel.Controls.Add(solutionScopeHeader, 0, 0);
+        solutionScopePanel.Controls.Add(_solutionScopeComboBox, 0, 1);
+
+        filterPanel.Controls.Add(solutionScopePanel, 0, 2);
+        filterPanel.SetColumnSpan(solutionScopePanel, 2);
+
         var actionPanel = new TableLayoutPanel
         {
             Dock = DockStyle.Fill,
@@ -181,7 +221,7 @@ public sealed class WorkflowDocumenterControl : PluginControlBase
         actionPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
 
         _refreshButton = CreateActionButton("Load Workflows", false);
-        _refreshButton.Click += (_, _) => ExecuteMethod(LoadCatalog);
+        _refreshButton.Click += (_, _) => ExecuteMethod(LoadSolutionsAndCatalog);
         actionPanel.Controls.Add(_refreshButton, 0, 0);
 
         _selectAllButton = CreateActionButton("Select All Found", false);
@@ -265,6 +305,7 @@ public sealed class WorkflowDocumenterControl : PluginControlBase
         Controls.Add(layout);
 
         UpdateCategoryChipCounts();
+        PopulateSolutionScopeOptions(null);
     }
 
     private static Button CreateActionButton(string text, bool primary)
@@ -320,7 +361,98 @@ public sealed class WorkflowDocumenterControl : PluginControlBase
 
         if (newService != null && IsHandleCreated)
         {
-            LoadCatalog();
+            LoadSolutionsAndCatalog();
+        }
+    }
+
+    private void LoadSolutionsAndCatalog()
+    {
+        if (Service == null)
+        {
+            return;
+        }
+
+        WorkAsync(new WorkAsyncInfo
+        {
+            Message = "Loading Dataverse solutions...",
+            Work = (_, args) =>
+            {
+                args.Result = _workflowProvider.GetSolutionsAsync(Service).GetAwaiter().GetResult();
+            },
+            PostWorkCallBack = args =>
+            {
+                if (args.Error != null)
+                {
+                    LogWarning("Solution list load failed: {0}", args.Error.Message);
+                    ShowStatusNotification("Could not load solutions list. Showing workflows from all solutions.", NotificationType.Warning);
+                    _solutionItems = Array.Empty<WorkflowSolutionItem>();
+                    PopulateSolutionScopeOptions(null);
+                    LoadCatalog();
+                    return;
+                }
+
+                var result = args.Result as ParseResult<IReadOnlyList<WorkflowSolutionItem>>;
+                _solutionItems = result?.Value ?? Array.Empty<WorkflowSolutionItem>();
+                PopulateSolutionScopeOptions(_selectedSolutionId);
+
+                if (result != null && result.Warnings.Count > 0)
+                {
+                    LogWarning("Solution list loaded with {0} warnings", result.Warnings.Count);
+                }
+
+                LoadCatalog();
+            }
+        });
+    }
+
+    private void PopulateSolutionScopeOptions(Guid? preferredSolutionId)
+    {
+        _suppressSolutionSelectionEvents = true;
+        try
+        {
+            _solutionScopeComboBox.Items.Clear();
+
+            var options = new List<SolutionScopeOption>
+            {
+                new(null, "All solutions")
+            };
+
+            options.AddRange(_solutionItems.Select(solution =>
+                new SolutionScopeOption(
+                    solution.SolutionId,
+                    string.Equals(solution.DisplayName, solution.UniqueName, StringComparison.OrdinalIgnoreCase)
+                        ? solution.DisplayName
+                        : $"{solution.DisplayName} ({solution.UniqueName})")));
+
+            _solutionScopeComboBox.Items.AddRange(options.Cast<object>().ToArray());
+
+            var selectedIndex = options.FindIndex(option => option.SolutionId == preferredSolutionId);
+            if (selectedIndex < 0)
+            {
+                selectedIndex = 0;
+            }
+
+            _solutionScopeComboBox.SelectedIndex = selectedIndex;
+            _selectedSolutionId = options[selectedIndex].SolutionId;
+        }
+        finally
+        {
+            _suppressSolutionSelectionEvents = false;
+        }
+    }
+
+    private void HandleSolutionScopeChanged()
+    {
+        if (_suppressSolutionSelectionEvents)
+        {
+            return;
+        }
+
+        _selectedSolutionId = (_solutionScopeComboBox.SelectedItem as SolutionScopeOption)?.SolutionId;
+
+        if (Service != null && IsHandleCreated)
+        {
+            ExecuteMethod(LoadCatalog);
         }
     }
 
@@ -331,7 +463,7 @@ public sealed class WorkflowDocumenterControl : PluginControlBase
             Message = "Loading Dataverse workflows...",
             Work = (_, args) =>
             {
-                args.Result = _workflowProvider.GetCatalogAsync(Service).GetAwaiter().GetResult();
+                args.Result = _workflowProvider.GetCatalogAsync(Service, _selectedSolutionId).GetAwaiter().GetResult();
             },
             PostWorkCallBack = args =>
             {
@@ -1046,6 +1178,11 @@ public sealed class WorkflowDocumenterControl : PluginControlBase
         public string StdOut { get; }
 
         public string StdErr { get; }
+    }
+
+    private sealed record SolutionScopeOption(Guid? SolutionId, string DisplayText)
+    {
+        public override string ToString() => DisplayText;
     }
 }
 

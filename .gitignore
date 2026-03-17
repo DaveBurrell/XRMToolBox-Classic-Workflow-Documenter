@@ -6,3 +6,5 @@ TestResults/
 *.user
 *.suo
 *.nupkg
+packages/
+BridgeNexa - Classic Workflow Documenter/packages/
