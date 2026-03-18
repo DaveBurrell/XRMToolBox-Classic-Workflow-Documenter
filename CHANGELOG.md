@@ -4,6 +4,17 @@ All notable changes to this project are documented in this file.
 
 The format is based on Keep a Changelog and this project follows Semantic Versioning.
 
+## [2.0.0] - 2026-03-18
+
+### Added
+- Submission bundle format aligned with the earlier zip-based runtime pattern: plugin payload ships with `BN.WorkflowDoc.Cli.runtime.zip` for CLI dependencies.
+
+### Changed
+- XrmToolBox package version bumped to 2.0.0.
+
+### Notes
+- Submission bundle prepared under `artifacts/submission-v2.0.0`.
+
 ## [1.0.8] - 2026-03-18
 
 ### Added
@@ -55,6 +66,7 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 ### Notes
 - This is the first public baseline release of the project.
 
+[2.0.0]: https://github.com/DaveBurrell/BridgeNexa-Workflow-Documenter/releases/tag/v2.0.0
 [1.0.8]: https://github.com/DaveBurrell/BridgeNexa-Workflow-Documenter/releases/tag/v1.0.8
 [1.0.5]: https://github.com/DaveBurrell/BridgeNexa-Workflow-Documenter/releases/tag/v1.0.5
 [1.0.0]: https://github.com/DaveBurrell/BridgeNexa-Workflow-Documenter/releases/tag/v1.0.0
