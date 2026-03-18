@@ -737,51 +737,66 @@ public sealed class WorkflowDocumenterControl : PluginControlBase
 
         using (stream)
         {
-            var pluginVersion = assembly.GetName().Version?.ToString() ?? "unknown";
-            var runtimeRoot = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                "BridgeNexa",
-                "WorkflowDocumenter",
-                "cli-runtime",
-                pluginVersion);
-            var markerPath = Path.Combine(runtimeRoot, ".ready");
-
-            if (!File.Exists(markerPath))
+            try
             {
-                Directory.CreateDirectory(runtimeRoot);
-                using var archive = new ZipArchive(stream, ZipArchiveMode.Read);
+                var pluginVersion = assembly.GetName().Version?.ToString() ?? "unknown";
+                var runtimeRoot = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                    "BridgeNexa",
+                    "WorkflowDocumenter",
+                    "cli-runtime",
+                    pluginVersion);
+                var markerPath = Path.Combine(runtimeRoot, ".ready");
 
-                foreach (var entry in archive.Entries)
+                if (!File.Exists(markerPath))
                 {
-                    var destinationPath = Path.Combine(runtimeRoot, entry.FullName);
-                    var destinationDirectory = Path.GetDirectoryName(destinationPath);
+                    Directory.CreateDirectory(runtimeRoot);
+                    using var archive = new ZipArchive(stream, ZipArchiveMode.Read);
 
-                    if (!string.IsNullOrWhiteSpace(destinationDirectory))
+                    foreach (var entry in archive.Entries)
                     {
-                        Directory.CreateDirectory(destinationDirectory);
+                        var destinationPath = Path.Combine(runtimeRoot, entry.FullName);
+                        var destinationDirectory = Path.GetDirectoryName(destinationPath);
+
+                        if (!string.IsNullOrWhiteSpace(destinationDirectory))
+                        {
+                            Directory.CreateDirectory(destinationDirectory);
+                        }
+
+                        if (string.IsNullOrEmpty(entry.Name))
+                        {
+                            continue;
+                        }
+
+                        using var entryStream = entry.Open();
+                        using var fileStream = File.Create(destinationPath);
+                        entryStream.CopyTo(fileStream);
                     }
 
-                    if (string.IsNullOrEmpty(entry.Name))
-                    {
-                        continue;
-                    }
-
-                    using var entryStream = entry.Open();
-                    using var fileStream = File.Create(destinationPath);
-                    entryStream.CopyTo(fileStream);
+                    File.WriteAllText(markerPath, DateTime.UtcNow.ToString("O", System.Globalization.CultureInfo.InvariantCulture));
                 }
 
-                File.WriteAllText(markerPath, DateTime.UtcNow.ToString("O", System.Globalization.CultureInfo.InvariantCulture));
-            }
+                var dllPath = Path.Combine(runtimeRoot, "BN.WorkflowDoc.Cli.dll");
+                if (File.Exists(dllPath))
+                {
+                    return dllPath;
+                }
 
-            var dllPath = Path.Combine(runtimeRoot, "BN.WorkflowDoc.Cli.dll");
-            if (File.Exists(dllPath))
+                var exePath = Path.Combine(runtimeRoot, "BN.WorkflowDoc.Cli.exe");
+                return File.Exists(exePath) ? exePath : null;
+            }
+            catch (InvalidDataException)
             {
-                return dllPath;
+                return null;
             }
-
-            var exePath = Path.Combine(runtimeRoot, "BN.WorkflowDoc.Cli.exe");
-            return File.Exists(exePath) ? exePath : null;
+            catch (IOException)
+            {
+                return null;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return null;
+            }
         }
     }
 
