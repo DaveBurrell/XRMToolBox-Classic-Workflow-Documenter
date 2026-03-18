@@ -4,6 +4,17 @@ All notable changes to this project are documented in this file.
 
 The format is based on Keep a Changelog and this project follows Semantic Versioning.
 
+## [1.0.8] - 2026-03-18
+
+### Added
+- Release packaging now builds the embedded CLI runtime bundle from publish output so dependent runtime DLLs are included in both `cli.zip` payloads and sidecar runtime bundles.
+
+### Changed
+- Plugin runtime bootstrap now gracefully falls back to local CLI probing when the embedded or sidecar runtime ZIP cannot be opened as a valid archive.
+
+### Notes
+- Submission bundle prepared under `artifacts/submission-v1.0.8`.
+
 ## [1.0.5] - 2026-03-17
 
 ### Added
@@ -44,5 +55,6 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 ### Notes
 - This is the first public baseline release of the project.
 
+[1.0.8]: https://github.com/DaveBurrell/BridgeNexa-Workflow-Documenter/releases/tag/v1.0.8
 [1.0.5]: https://github.com/DaveBurrell/BridgeNexa-Workflow-Documenter/releases/tag/v1.0.5
 [1.0.0]: https://github.com/DaveBurrell/BridgeNexa-Workflow-Documenter/releases/tag/v1.0.0

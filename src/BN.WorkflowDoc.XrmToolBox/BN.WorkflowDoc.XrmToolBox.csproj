@@ -11,11 +11,12 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <CliProjectPath>..\BN.WorkflowDoc.Cli\BN.WorkflowDoc.Cli.csproj</CliProjectPath>
     <CliTargetFramework>net10.0</CliTargetFramework>
-    <CliOutputPath>..\BN.WorkflowDoc.Cli\bin\$(Configuration)\$(CliTargetFramework)</CliOutputPath>
-    <CliBundlePath>$(IntermediateOutputPath)cli-runtime.zip</CliBundlePath>
+    <CliBuildOutputPath>..\BN.WorkflowDoc.Cli\bin\$(Configuration)\$(CliTargetFramework)</CliBuildOutputPath>
+    <CliPublishPath>$(MSBuildProjectDirectory)\obj\$(Configuration)\$(TargetFramework)\cli-publish\</CliPublishPath>
+    <CliBundlePath>$(MSBuildProjectDirectory)\obj\$(Configuration)\$(TargetFramework)\cli-runtime.zip</CliBundlePath>
     <CliSidecarBundleName>BN.WorkflowDoc.Cli.runtime.zip</CliSidecarBundleName>
-    <Version>1.0.7</Version>
-    <PackageVersion>1.0.7</PackageVersion>
+    <Version>1.0.8</Version>
+    <PackageVersion>1.0.8</PackageVersion>
     <PackageId>BN.WorkflowDoc.XrmToolBox</PackageId>
     <Title>BridgeNexa Workflow Documenter</Title>
     <Authors>Dave Burrell</Authors>
@@ -53,17 +54,17 @@
     <None Include="$(OutputPath)$(AssemblyName).pdb" Pack="true" PackagePath="lib\net48\Plugins\BN.WorkflowDoc.XrmToolBox" Visible="false" Condition="Exists('$(OutputPath)$(AssemblyName).pdb')" />
     <None Include="$(OutputPath)System.Text.Json.dll" Pack="true" PackagePath="lib\net48\Plugins\BN.WorkflowDoc.XrmToolBox" Visible="false" Condition="Exists('$(OutputPath)System.Text.Json.dll')" />
     <None Include="$(OutputPath)System.Text.Encodings.Web.dll" Pack="true" PackagePath="lib\net48\Plugins\BN.WorkflowDoc.XrmToolBox" Visible="false" Condition="Exists('$(OutputPath)System.Text.Encodings.Web.dll')" />
-    <None Include="$(CliOutputPath)\**\*" Pack="true" PackagePath="lib\net48\Plugins\BN.WorkflowDoc.XrmToolBox\cli" Visible="false" />
+    <None Include="$(CliPublishPath)**\*" Pack="true" PackagePath="lib\net48\Plugins\BN.WorkflowDoc.XrmToolBox\cli" Visible="false" />
   </ItemGroup>
 
   <Target Name="BuildCliRuntimeBundle" BeforeTargets="CreateManifestResourceNames">
     <MSBuild
       Projects="$(CliProjectPath)"
-      Targets="Build"
-      Properties="Configuration=$(Configuration);TargetFramework=$(CliTargetFramework)"
+      Targets="Publish"
+      Properties="Configuration=$(Configuration);TargetFramework=$(CliTargetFramework);PublishDir=$(CliPublishPath);SelfContained=false;UseAppHost=false"
       RemoveProperties="RuntimeIdentifier;SelfContained;PublishSingleFile;PublishReadyToRun;UseAppHost;NoBuild;GeneratePackageOnBuild" />
 
-    <Exec Command="powershell -NoProfile -ExecutionPolicy Bypass -Command &quot;if (Test-Path '$(CliBundlePath)') { Remove-Item -Force '$(CliBundlePath)' }; Compress-Archive -Path '$(CliOutputPath)\*' -DestinationPath '$(CliBundlePath)' -Force&quot;" />
+    <Exec Command="powershell -NoProfile -ExecutionPolicy Bypass -Command &quot;if (Test-Path '$(CliBundlePath)') { Remove-Item -Force '$(CliBundlePath)' }; if (Test-Path '$(CliPublishPath)') { Compress-Archive -Path '$(CliPublishPath)*' -DestinationPath '$(CliBundlePath)' -Force } else { throw 'CLI publish output was not found at $(CliPublishPath)' }&quot;" />
 
     <ItemGroup>
       <EmbeddedResource Include="$(CliBundlePath)" LogicalName="BN.WorkflowDoc.XrmToolBox.CliRuntime.zip" />
